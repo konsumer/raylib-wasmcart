@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>null0</title>
+    <style>
+        html, body  {
+            margin: 0;
+            height: 100vh;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            background: black;
+        }
+        #console {
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="screen" oncontextmenu="event.preventDefault()"></canvas>
+    <!-- <pre id="console"></pre> -->
+    <script type='module'>
+        import setupHost from './null0.mjs'
+        const host = await setupHost({
+            canvas: document.getElementById('screen'),
+            arguments: ["./hello.null0"]
+        })
+        console.log(host)
+    </script>
+</body>
+
+</html>
