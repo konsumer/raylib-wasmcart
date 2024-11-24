@@ -29,10 +29,10 @@ int main(int argc, char *argv[]) {
   PHYSFS_sint64 wasmBytesLen = 0;
   unsigned char* wasmBytes = read_physfs_file("main.wasm", &wasmBytesLen);
 
-  null0_host_load(wasmBytes, (int)wasmBytesLen);
-
   InitWindow(320, 240, "null0");
   SetTargetFPS(60);
+
+  null0_host_load(wasmBytes, (int)wasmBytesLen);
 
   while (!WindowShouldClose()) {
     BeginDrawing();

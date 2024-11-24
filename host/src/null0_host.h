@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "physfs.h"
 #include <stdlib.h>
+#include "cvector.h"
 
 // Read a file in physfs memory
 // physfs must be mounted first

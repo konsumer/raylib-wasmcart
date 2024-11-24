@@ -4,6 +4,8 @@
 #include <string.h>
 #include <stdio.h>
 
+static cvector_vector_type(Font) fonts = NULL;
+
 // just get the size of a file at a  url
 EM_ASYNC_JS(int, file_size_real, (char* url), {
     return fetch(UTF8ToString(url)).then(response => Number(response.headers.get("content-length")));
@@ -17,6 +19,15 @@ EM_ASYNC_JS(unsigned char*, __file_read_real, (char* url, int file_size), {
     return output;
 });
 
+// allocate cart-memory from host C
+EM_ASYNC_JS(unsigned int, cart_malloc, (int size), {
+    return Module.cart.malloc(size);
+});
+
+// free cart-memory from host C
+EM_ASYNC_JS(void, cart_free, (unsigned int ptr), {
+    Module.cart.free(ptr);
+});
 
 unsigned char* file_read_real(char* url, unsigned int* fileSizePtr) {
     int file_size = file_size_real(url);
@@ -28,9 +39,8 @@ unsigned char* file_read_real(char* url, unsigned int* fileSizePtr) {
     return __file_read_real(url, file_size);
 }
 
-
 // called to setup cart
-EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLen), {
+EM_ASYNC_JS(void, __null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLen), {
     if (!Module.cart_wasi) {
         throw new Error("Set cart_wasi");
     }
@@ -55,6 +65,11 @@ EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLe
         exports.load();
     }
 });
+
+void null0_host_load(unsigned char* wasmBytesPtr, int wasmBytesLen) {
+    cvector_push_back(fonts, GetFontDefault());
+    __null0_host_load(wasmBytesPtr, wasmBytesLen);
+}
 
 // called when host is updated
 EM_JS(void, null0_host_update, (double time), {
@@ -119,6 +134,6 @@ EMSCRIPTEN_KEEPALIVE void host_trace(unsigned int textPtr) {
 EMSCRIPTEN_KEEPALIVE int host_measure_text(unsigned int textPtr, int fontSize) {
     char* text = null0_host_get_cart_string(textPtr);
     int d = MeasureText(text, fontSize);
-    // printf("measure_text('%s', %d): %d\n", text, fontSize, d);
+    printf("measure_text('%s', %d): %d\n", text, fontSize, d);
     return d;
 }
