@@ -52,6 +52,11 @@ typedef struct {
     u8 a;
 } Color;
 
+typedef struct {
+    f32 x;                // Vector x component
+    f32 y;                // Vector y component
+} Vector2;
+
 #define WIDTH 320
 #define HEIGHT 240
 
@@ -103,4 +108,4 @@ void trace(const char* format, ...) {
 
 NULL0_IMPORT("clear") void clear(Color color);
 NULL0_IMPORT("draw_text") void draw_text(char* text, i32 posX, i32 posY, i32 fontSize, Color color);
-NULL0_IMPORT("measure_text") i32 measure_text(char* text, int fontSize);
+NULL0_IMPORT("measure_text") Vector2 measure_text(char* text, unsigned int font, int fontSize);

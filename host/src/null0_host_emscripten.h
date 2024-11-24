@@ -93,6 +93,13 @@ EM_JS(void*, null0_host_get_cart_pointer, (unsigned int cart_ptr, unsigned int s
     return out;
 });
 
+// copy a pointer from host to cart
+EM_JS(unsigned int, null0_host_set_cart_pointer, (void* host_ptr, unsigned int size), {
+    const out = Module.cart.malloc(size);
+    new Uint8Array(Module.cart.memory.buffer).set(Module.HEAPU8.slice(host_ptr, host_ptr+size), out);
+    return out;
+});
+
 // copy string from cart  into host
 EM_JS(char*, null0_host_get_cart_string, (unsigned int cart_ptr), {
     let len = 0;
@@ -131,9 +138,16 @@ EMSCRIPTEN_KEEPALIVE void host_trace(unsigned int textPtr) {
     printf("%s\n", null0_host_get_cart_string(textPtr));
 }
 
-EMSCRIPTEN_KEEPALIVE int host_measure_text(unsigned int textPtr, int fontSize) {
+EMSCRIPTEN_KEEPALIVE unsigned int host_measure_text(unsigned int textPtr, unsigned int font, int fontSize) {
     char* text = null0_host_get_cart_string(textPtr);
-    int d = MeasureText(text, fontSize);
-    printf("measure_text('%s', %d): %d\n", text, fontSize, d);
-    return d;
+
+    // basically same as MeasureText, but I want h/w
+    Vector2 textSize = { 0.0f, 0.0f };
+    if (GetFontDefault().texture.id != 0) {
+        int defaultFontSize = 10;   // Default Font chars height in pixel
+        if (fontSize < defaultFontSize) fontSize = defaultFontSize;
+        int spacing = fontSize/defaultFontSize;
+        textSize = MeasureTextEx(fonts[font], text, (float)fontSize, (float)spacing);
+    }
+    return null0_host_set_cart_pointer(&textSize, sizeof(textSize));
 }
