@@ -4,8 +4,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static cvector_vector_type(Font) fonts = NULL;
-
 // called on cart init
 EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLen), {
     if (!Module.cart_wasi) {
@@ -27,7 +25,6 @@ EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLe
     Module.cart = exports;
     Module.cart_wasi.start(exports);
     Module?.cart?.load && Module.cart.load();
-    console.log(exports);
 });
 
 // called on cart update
@@ -60,13 +57,19 @@ EM_JS(void, cart_free, (unsigned int ptr), {
     Module.cart.free(ptr);
 });
 
+// copy a pointer from cart to host
 EM_JS(void*, cart_get_pointer, (unsigned int cartPtr, unsigned int len), {
     const out = Module._malloc(len);
     const cartMem = new Uint8Array(Module.cart.memory.buffer).slice(cartPtr, cartPtr + len);
     Module.HEAPU8.set(cartMem, out);
     return out;
-}); 
+});
 
+// copy a pointer from host to cart
+EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len), {
+});
+
+// copy a string from cart to host
 EM_JS(char*, cart_get_string, (unsigned int cartPtr), {
     const cartMem = new Uint8Array(Module.cart.memory.buffer.slice(cartPtr));
     const len = cartMem.findIndex(b => b === 0);
@@ -75,6 +78,7 @@ EM_JS(char*, cart_get_string, (unsigned int cartPtr), {
     }
 });
 
+// copy a string from host to cart
 EM_JS(unsigned int, cart_set_string, (char* hostPtr), {});
 
 EMSCRIPTEN_KEEPALIVE void host_InitWindow(int width, int height, unsigned int titlePtr) {

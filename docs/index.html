@@ -43,13 +43,17 @@
       import { WasiPreview1 } from 'easywasi'
       import CartFS from './cartfs.js'
 
-      const cart_wasi = new WasiPreview1()
+      const cartUrl='carts/hello.null0'
 
+      const cart_wasi = new WasiPreview1()
       const host = await setupHost({
         canvas: document.getElementById('screen'),
         cart_wasi,
         CartFS,
-        arguments: ['carts/hello.null0']
+        arguments: ['/cart.null0'],
+        preRun: async ({ FS_createPreloadedFile }) => {
+          await FS_createPreloadedFile("/", 'cart.null0', cartUrl, true, false)
+        }
       })
     </script>
   </body>
