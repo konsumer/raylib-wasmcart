@@ -67,9 +67,12 @@ int main(int argc, char *argv[]) {
     TraceLog(LOG_ERROR, "Usage: %s <CART>", argv[0]);
     return 1;
   }
+
+  InitWindow(320, 240, "raylib");
   
   if (!InitPhysFS()) {
     TraceLog(LOG_ERROR, "Could not init filesystem.");
+    CloseWindow();
     return 1;
   }
 
@@ -77,6 +80,7 @@ int main(int argc, char *argv[]) {
   if (stat(argv[1], &sb) != 0){
     TraceLog(LOG_ERROR, "Could not open %s", argv[1]);
     ClosePhysFS();
+    CloseWindow();
     return 1;
   }
   bool is_dir = S_ISDIR(sb.st_mode);
@@ -90,6 +94,7 @@ int main(int argc, char *argv[]) {
     if (!file) {
       TraceLog(LOG_ERROR, "Could not open %s", argv[1]);
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
     fread(&magic_number, sizeof(uint32_t), 1, file);
@@ -104,17 +109,20 @@ int main(int argc, char *argv[]) {
     if (!MountPhysFS(argv[1], "/")) {
       TraceLog(LOG_ERROR, "Could not mount filesystem from %s", argv[1]);
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
     if (!FileExistsInPhysFS("/main.wasm")) {
       TraceLog(LOG_ERROR, "Invalid cart. Must have main.wasm.");
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
     wasmBytes = LoadFileDataFromPhysFS("/main.wasm", &wasmBytesLen);
     if (wasmBytesLen == 0) {
       TraceLog(LOG_ERROR, "Could not read main.wasm.");
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
   } else if (fileType == FILE_TYPE_WASM) {
@@ -122,6 +130,7 @@ int main(int argc, char *argv[]) {
     if (!MountPhysFS(dir, "/")) {
       TraceLog(LOG_ERROR, "Could not mount filesystem from %s", dir);
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
     char* wasmFilename = basename(argv[1]);
@@ -129,21 +138,23 @@ int main(int argc, char *argv[]) {
     if (!FileExistsInPhysFS(wasmFilename)) {
       TraceLog(LOG_ERROR, "Invalid cart. Must have main.wasm.");
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
     wasmBytes = LoadFileDataFromPhysFS(wasmFilename, &wasmBytesLen);
     if (wasmBytesLen == 0) {
       TraceLog(LOG_ERROR, "Could not read main.wasm.");
       ClosePhysFS();
+      CloseWindow();
       return 1;
     }
   } else {
     TraceLog(LOG_ERROR, "Cart must be a dir, zip or wasm file: %s", argv[1]);
     ClosePhysFS();
+    CloseWindow();
     return 1;
   }
 
-  InitWindow(320, 240, "raylib");
   null0_host_load(wasmBytes, wasmBytesLen);
   
   while (!WindowShouldClose()) {
