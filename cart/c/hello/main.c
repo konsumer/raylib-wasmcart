@@ -1,7 +1,7 @@
 #include "raylib.h"
 
 int main() {
-    SetWindowSize(1024, 1024);
+    SetWindowSize(800, 600);
     return 0;
 }
 

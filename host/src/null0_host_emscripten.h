@@ -38,16 +38,6 @@ EM_JS(void, null0_host_unload, (), {
     Module?.cart?.unload && Module.cart.unload();
 });
 
-// read a real file from fs (fetch URL)
-EM_ASYNC_JS(unsigned char*, file_read_real, (char* filenamePtr, unsigned int* fileSizePtr), {
-    let size = 0;
-    const bytes = new Uint8Array(await fetch(UTF8ToString(filenamePtr)).then(r => r.arrayBuffer()));
-    const out = Module._malloc(bytes.length);
-    Module.HEAPU8.set(bytes, out);
-    Module.HEAPU32[fileSizePtr/4] = bytes.length;
-    return out;
-});
-
 // allocate cart-memory from host C
 EM_JS(unsigned int, cart_malloc, (int size), {
     return Module.cart.malloc(size);
@@ -81,12 +71,6 @@ EM_JS(char*, cart_get_string, (unsigned int cartPtr), {
 
 // copy a string from host to cart
 EM_JS(unsigned int, cart_set_string, (char* hostPtr), {});
-
-EMSCRIPTEN_KEEPALIVE void host_InitWindow(int width, int height, unsigned int titlePtr) {
-    char* title = cart_get_string(titlePtr);
-    InitWindow(width, height, title);
-    free(title);
-}
 
 EMSCRIPTEN_KEEPALIVE void host_ClearBackground(unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
