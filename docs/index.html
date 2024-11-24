@@ -1,40 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="icon" type="image/x-icon" href="https://avatars.githubusercontent.com/u/10213618?s=96&v=4" />
     <title>null0</title>
     <style>
-        html, body  {
-            margin: 0;
-            height: 100vh;
-        }
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: white;
-            background: black;
-        }
-        #console {
-            overflow: auto;
-        }
+      html,
+      body {
+        margin: 0;
+        height: 100vh;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+        background: black;
+      }
+      #console {
+        overflow: auto;
+      }
     </style>
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "easywasi": "https://esm.sh/easywasi",
+          "@zenfs/core": "https://esm.sh/@zenfs/core",
+          "@zenfs/dom": "https://esm.sh/@zenfs/dom",
+          "@zenfs/zip": "https://esm.sh/@zenfs/zip"
+        }
+      }
+    </script>
+  </head>
 
-<body>
+  <body>
     <canvas id="screen" oncontextmenu="event.preventDefault()"></canvas>
     <!-- <pre id="console"></pre> -->
-    <script type='module'>
-        import setupHost from './null0.mjs'
-        const host = await setupHost({
-            canvas: document.getElementById('screen'),
-            arguments: ["./hello.null0"]
-        })
-        console.log(host)
-    </script>
-</body>
+    <script type="module">
+      import setupHost from './null0.mjs'
+      import { WasiPreview1 } from 'easywasi'
+      import CartFS from './cartfs.js'
 
+      const cart_wasi = new WasiPreview1()
+
+      const host = await setupHost({
+        canvas: document.getElementById('screen'),
+        cart_wasi,
+        CartFS,
+        arguments: ['carts/hello.null0']
+      })
+
+      console.log(host)
+    </script>
+  </body>
 </html>

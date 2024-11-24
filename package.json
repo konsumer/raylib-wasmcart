@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "description": "live-reloading raylib project template",
   "scripts": {
-    "build:native": "cmake -G Ninja -B build && cmake --build build",
-    "build:web": "emcmake cmake -G Ninja -B wbuild -DPLATFORM=Web && cmake --build wbuild",
+    "build:native": "cmake -G Ninja -B build -DCARTS_ONLY=OFF && cmake --build build",
+    "build:web": "emcmake cmake -G Ninja -B wbuild -DPLATFORM=Web -DCARTS_ONLY=OFF && cmake --build wbuild",
+    "build:carts": "cmake -G Ninja -B build -DCARTS_ONLY=ON && cmake --build build",
     "build:web:reload": "nodemon -w ./host -e c,cpp,h -x \"npm run build:web\"",
     "dev:web": "live-server docs",
     "start": "npm run build:web && run-p build:web:reload dev:web",
-    "start:docker": "docker run -it --rm -p 8080:8080 --mount type=bind,src=.,dst=/src emscripten/emsdk ./docker-dev.sh"
+    "start:docker": "docker run -it --rm -p 8080:8080 --mount type=bind,src=.,dst=/src emscripten/emsdk ./tools/docker-dev.sh"
   },
   "keywords": [],
   "author": "David Konsumer <konsumer@jetboystudio.com>",
