@@ -8,9 +8,12 @@ int main(int argc, char *argv[]) {
       return 1;
   }
 
-  unsigned int zipBytesSize = file_size_real(argv[1]);
-  unsigned char* zipBytes = malloc(zipBytesSize);
-  file_read_real(zipBytes, argv[1]);
+  unsigned int zipBytesSize = 0;
+  unsigned char* zipBytes = file_read_real(argv[1], &zipBytesSize);
+
+  if (zipBytes == NULL) {
+    TraceLog(LOG_ERROR, "Could not mount filesystem from %s.", argv[1]);
+  }
 
   if (!PHYSFS_init("/")) {
     TraceLog(LOG_ERROR, "Could not init filesystem.\n");

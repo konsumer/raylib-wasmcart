@@ -40,11 +40,8 @@ void null0_host_update(double timeMs);
 // called on cart unload
 void null0_host_unload();
 
-// get real filesize from fs
-int file_size_real(char* filename);
-
 // read a real file from fs
-void file_read_real(unsigned char* output, char* filename);
+unsigned char* file_read_real(char* filename, unsigned int* fileSize);
 
 #ifdef EMSCRIPTEN
 #include "null0_host_emscripten.h"

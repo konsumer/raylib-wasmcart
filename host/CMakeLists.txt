@@ -11,8 +11,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static)
 
 # build for web
 if (EMSCRIPTEN)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -sUSE_GLFW=3  -sASYNCIFY -Oz -sSINGLE_FILE -sMALLOC=emmalloc  -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS=_malloc,_free,_main")
-    set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
+    set_target_properties(
+        ${PROJECT_NAME} PROPERTIES
+        SUFFIX ".mjs"
+        COMPILE_FLAGS "-Oz"
+        LINK_FLAGS "-Oz -sUSE_GLFW=3 -sASYNCIFY -sSINGLE_FILE -sMALLOC=emmalloc -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS=_malloc,_free,_main"
+    )
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND "${CMAKE_COMMAND}" -E copy
        "$<TARGET_FILE:${PROJECT_NAME}>"
