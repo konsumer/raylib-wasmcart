@@ -1,7 +1,7 @@
 #include "raylib.h"
 
 int main() {
-    InitWindow(800, 600, "raylib in wasm");
+    SetWindowSize(1024, 1024);
     return 0;
 }
 

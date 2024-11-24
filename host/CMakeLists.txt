@@ -8,10 +8,10 @@ set(PROJECT_INCLUDE "${CMAKE_CURRENT_LIST_DIR}/src/")
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_INCLUDE})
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs)
 
 # build for web
 if (EMSCRIPTEN)
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs)
     set_target_properties(
         ${PROJECT_NAME} PROPERTIES
         SUFFIX ".mjs"
@@ -22,4 +22,7 @@ if (EMSCRIPTEN)
     COMMAND "${CMAKE_COMMAND}" -E copy
        "$<TARGET_FILE:${PROJECT_NAME}>"
        "${PROJECT_SOURCE_DIR}/docs/$<TARGET_FILE_NAME:${PROJECT_NAME}>")
-endif ()
+else()
+    find_package(wamr)
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs vmlib)
+endif()

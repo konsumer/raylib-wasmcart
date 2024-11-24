@@ -21,10 +21,11 @@ EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLe
             cartImports.env[n.replace(/^_host_/, "")] = Module[n];
         }
     }
-    const { instance: {exports} } = await WebAssembly.instantiate(wasmBytes, cartImports);
+    const { instance: { exports } } = await WebAssembly.instantiate(wasmBytes, cartImports);
     Module.cart = exports;
     Module.cart_wasi.start(exports);
     Module?.cart?.load && Module.cart.load();
+    console.log(exports);
 });
 
 // called on cart update
@@ -99,4 +100,9 @@ EMSCRIPTEN_KEEPALIVE void host_DrawText(unsigned int textPtr, int posX, int posY
     DrawText(text, posX, posY, fontSize, *color);
     free(text);
     free(color);
+}
+
+EMSCRIPTEN_KEEPALIVE void host_SetWindowSize(int width, int height) {
+    TraceLog(LOG_INFO, "Resize: %dx%d", width, height);
+    SetWindowSize(width, height);
 }
