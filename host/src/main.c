@@ -1,8 +1,6 @@
 #include "null0_host.h"
 
 int main(int argc, char *argv[]) {
-  SetTraceLogLevel(LOG_WARNING);
-
   if (argc != 2) {
       TraceLog(LOG_ERROR, "Usage: %s <CART_FILE>", argv[0]);
       return 1;
@@ -29,10 +27,8 @@ int main(int argc, char *argv[]) {
   PHYSFS_sint64 wasmBytesLen = 0;
   unsigned char* wasmBytes = read_physfs_file("main.wasm", &wasmBytesLen);
 
-  InitWindow(320, 240, "null0");
-  SetTargetFPS(60);
-
   null0_host_load(wasmBytes, (int)wasmBytesLen);
+  SetTargetFPS(60);
 
   while (!WindowShouldClose()) {
     BeginDrawing();
@@ -42,5 +38,6 @@ int main(int argc, char *argv[]) {
 
   CloseWindow();
   null0_host_unload();
+  
   return 0;
 }

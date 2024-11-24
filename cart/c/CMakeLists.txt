@@ -37,6 +37,11 @@ set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
 
 function(BUILDCART name)
     add_executable(${name} ${name}/main.c)
+    set_target_properties(
+        ${name}
+        PROPERTIES
+        LINK_FLAGS "-Wl,--allow-undefined"
+    )
     add_custom_command(
         TARGET ${name}
         POST_BUILD

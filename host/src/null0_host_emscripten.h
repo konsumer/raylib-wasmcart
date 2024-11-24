@@ -6,148 +6,93 @@
 
 static cvector_vector_type(Font) fonts = NULL;
 
-// just get the size of a file at a  url
-EM_ASYNC_JS(int, file_size_real, (char* url), {
-    return fetch(UTF8ToString(url)).then(response => Number(response.headers.get("content-length")));
-});
-
-// perform a fetch of a url
-EM_ASYNC_JS(unsigned char*, __file_read_real, (char* url, int file_size), {
-    const output = Module._malloc(file_size);
-    const bytes = await fetch(UTF8ToString(url)).then(r => r.arrayBuffer());
-    Module.HEAPU8.set(new Uint8Array(bytes), output);
-    return output;
-});
-
-// allocate cart-memory from host C
-EM_ASYNC_JS(unsigned int, cart_malloc, (int size), {
-    return Module.cart.malloc(size);
-});
-
-// free cart-memory from host C
-EM_ASYNC_JS(void, cart_free, (unsigned int ptr), {
-    Module.cart.free(ptr);
-});
-
-unsigned char* file_read_real(char* url, unsigned int* fileSizePtr) {
-    int file_size = file_size_real(url);
-    *fileSizePtr = file_size;
-    if (!file_size) {
-        TraceLog(LOG_ERROR, "Cannot open file %s", url);
-        return NULL;
-    }
-    return __file_read_real(url, file_size);
-}
-
-// called to setup cart
-EM_ASYNC_JS(void, __null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLen), {
+// called on cart init
+EM_ASYNC_JS(void, null0_host_load, (unsigned char* wasmBytesPtr, int wasmBytesLen), {
     if (!Module.cart_wasi) {
         throw new Error("Set cart_wasi");
     }
     if (!Module.CartFS) {
         throw new Error("Set CartFS");
     }
+
     Module.cart_wasi.fs = new Module.CartFS(Module);
     const wasmBytes = Module.HEAPU8.slice(wasmBytesPtr, wasmBytesPtr+wasmBytesLen);
-    const cartImports = {null0: {}, wasi_snapshot_preview1: Module.cart_wasi};
+    const cartImports = {env: {}, wasi_snapshot_preview1: Module.cart_wasi};
     for (const n of Object.keys(Module)) {
         if (n.startsWith("_host")) {
-            cartImports.null0[n.replace(/^_host_/, "")] = Module[n];
+            cartImports.env[n.replace(/^_host_/, "")] = Module[n];
         }
     }
     const { instance: {exports} } = await WebAssembly.instantiate(wasmBytes, cartImports);
     Module.cart = exports;
+    Module.cart_wasi.start(exports);
+    Module?.cart?.load && Module.cart.load();
+    console.log(exports);
+});
 
-    if (exports._start) {
-        exports._start();
-    }
-    if (exports.load) {
-        exports.load();
+// called on cart update
+EM_JS(void, null0_host_update, (double timeMs), {
+    Module?.cart?.update && Module.cart.update(timeMs);
+});
+
+// called on cart unload
+EM_JS(void, null0_host_unload, (), {
+    Module?.cart?.unload && Module.cart.unload();
+});
+
+// read a real file from fs (fetch URL)
+EM_ASYNC_JS(unsigned char*, file_read_real, (char* filenamePtr, unsigned int* fileSizePtr), {
+    let size = 0;
+    const bytes = new Uint8Array(await fetch(UTF8ToString(filenamePtr)).then(r => r.arrayBuffer()));
+    const out = Module._malloc(bytes.length);
+    Module.HEAPU8.set(bytes, out);
+    Module.HEAPU32[fileSizePtr/4] = bytes.length;
+    return out;
+});
+
+// allocate cart-memory from host C
+EM_JS(unsigned int, cart_malloc, (int size), {
+    return Module.cart.malloc(size);
+});
+
+// free cart-memory from host C
+EM_JS(void, cart_free, (unsigned int ptr), {
+    Module.cart.free(ptr);
+});
+
+EM_JS(void*, cart_get_pointer, (unsigned int cartPtr, unsigned int len), {
+    const out = Module._malloc(len);
+    const cartMem = new Uint8Array(Module.cart.memory.buffer).slice(cartPtr, cartPtr + len);
+    Module.HEAPU8.set(cartMem, out);
+    return out;
+}); 
+
+EM_JS(char*, cart_get_string, (unsigned int cartPtr), {
+    const cartMem = new Uint8Array(Module.cart.memory.buffer.slice(cartPtr));
+    const len = cartMem.findIndex(b => b === 0);
+    if (len !== -1){
+        return cart_get_pointer(cartPtr, len + 1);
     }
 });
 
-void null0_host_load(unsigned char* wasmBytesPtr, int wasmBytesLen) {
-    cvector_push_back(fonts, GetFontDefault());
-    __null0_host_load(wasmBytesPtr, wasmBytesLen);
+EM_JS(unsigned int, cart_set_string, (char* hostPtr), {});
+
+EMSCRIPTEN_KEEPALIVE void host_InitWindow(int width, int height, unsigned int titlePtr) {
+    char* title = cart_get_string(titlePtr);
+    InitWindow(width, height, title);
+    free(title);
 }
 
-// called when host is updated
-EM_JS(void, null0_host_update, (double time), {
-    if (Module?.cart?.update) {
-        Module.cart.update(time);
-    }
-});
-
-// called when host is unloaded
-EM_JS(void, null0_host_unload, (), {
-    if (Module?.cart?.unload) {
-        Module.cart.unload();
-    }
-});
-
-// copy a pointer from cart into host
-EM_JS(void*, null0_host_get_cart_pointer, (unsigned int cart_ptr, unsigned int size), {
-    const out = Module._malloc(size);
-    const mem = new Uint8Array(Module.cart.memory.buffer.slice(cart_ptr, cart_ptr + size));
-    Module.HEAPU8.set(mem, out);
-    return out;
-});
-
-// copy a pointer from host to cart
-EM_JS(unsigned int, null0_host_set_cart_pointer, (void* host_ptr, unsigned int size), {
-    const out = Module.cart.malloc(size);
-    new Uint8Array(Module.cart.memory.buffer).set(Module.HEAPU8.slice(host_ptr, host_ptr+size), out);
-    return out;
-});
-
-// copy string from cart  into host
-EM_JS(char*, null0_host_get_cart_string, (unsigned int cart_ptr), {
-    let len = 0;
-    const maxLen = 1024*1024;
-    const mem = new Uint8Array(Module.cart.memory.buffer.slice(cart_ptr, cart_ptr + maxLen));
-    while (len < maxLen) {
-        if (mem[len] === 0) {
-            break;
-        }
-        len++;
-    }
-    if (len === maxLen) {
-        return 0;
-    }
-    const out = Module._malloc(len+1);
-    Module.HEAPU8.set(mem.slice(0, len+1), out);
-    return out;
-});
-
-EMSCRIPTEN_KEEPALIVE void host_clear(unsigned int colorPtr) {
-    Color* color = null0_host_get_cart_pointer(colorPtr, sizeof(Color));
-    // printf("clear(%u, %u, %u, %u)\n", color->r, color->g, color->b, color->a);
+EMSCRIPTEN_KEEPALIVE void host_ClearBackground(unsigned int colorPtr) {
+    Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     ClearBackground(*color);
     free(color);
 }
 
-EMSCRIPTEN_KEEPALIVE void host_draw_text(unsigned int textPtr, int posX, int posY, int fontSize, unsigned int colorPtr) {
-    Color* color = null0_host_get_cart_pointer(colorPtr, sizeof(Color));
-    char* text = null0_host_get_cart_string(textPtr);
-    // printf("draw_text('%s', %dx%d, %d, %u, %u, %u, %u)\n", text, posX, posY, fontSize, color->r, color->g, color->b, color->a);
+EMSCRIPTEN_KEEPALIVE void host_DrawText(unsigned int textPtr, int posX, int posY, int fontSize, unsigned int colorPtr) {
+    char* text = cart_get_string(textPtr);
+    Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     DrawText(text, posX, posY, fontSize, *color);
+    free(text);
     free(color);
-}
-
-EMSCRIPTEN_KEEPALIVE void host_trace(unsigned int textPtr) {
-    printf("%s\n", null0_host_get_cart_string(textPtr));
-}
-
-EMSCRIPTEN_KEEPALIVE unsigned int host_measure_text(unsigned int textPtr, unsigned int font, int fontSize) {
-    char* text = null0_host_get_cart_string(textPtr);
-
-    // basically same as MeasureText, but I want h/w
-    Vector2 textSize = { 0.0f, 0.0f };
-    if (GetFontDefault().texture.id != 0) {
-        int defaultFontSize = 10;   // Default Font chars height in pixel
-        if (fontSize < defaultFontSize) fontSize = defaultFontSize;
-        int spacing = fontSize/defaultFontSize;
-        textSize = MeasureTextEx(fonts[font], text, (float)fontSize, (float)spacing);
-    }
-    return null0_host_set_cart_pointer(&textSize, sizeof(textSize));
 }
