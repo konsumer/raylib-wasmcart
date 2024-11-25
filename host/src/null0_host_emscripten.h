@@ -58,6 +58,9 @@ EM_JS(void*, cart_get_pointer, (unsigned int cartPtr, unsigned int len), {
 
 // copy a pointer from host to cart
 EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len), {
+    const cartPtr = Module.cart.malloc(len);
+    new Uint8Array(Module.cart.memory.buffer).set(Module.HEAPU8.slice(hostPtr, hostPtr+len), cartPtr);
+    return cartPtr;
 });
 
 // copy a string from cart to host
@@ -70,7 +73,13 @@ EM_JS(char*, cart_get_string, (unsigned int cartPtr), {
 });
 
 // copy a string from host to cart
-EM_JS(unsigned int, cart_set_string, (char* hostPtr), {});
+EM_JS(unsigned int, cart_set_string, (char* hostPtr), {
+    const hostMem = Module.HEAPU8.slice(hostPtr);
+    const len = hostMem.findIndex(b => b === 0);
+    if (len !== -1){
+        return cart_set_pointer(hostPtr, len + 1);
+    }
+});
 
 EMSCRIPTEN_KEEPALIVE void host_ClearBackground(unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
@@ -87,6 +96,33 @@ EMSCRIPTEN_KEEPALIVE void host_DrawText(unsigned int textPtr, int posX, int posY
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetWindowSize(int width, int height) {
-    TraceLog(LOG_INFO, "Resize: %dx%d", width, height);
     SetWindowSize(width, height);
+}
+
+EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImage(unsigned int filenamePtr) {
+    char* filename = cart_get_string(filenamePtr);
+    printf("LoadImage('%s')\n", filename);
+    Image out = LoadImage(filename);
+    free(filename);
+    return cart_set_pointer(&out, sizeof(out));
+}
+
+EMSCRIPTEN_KEEPALIVE unsigned int host_LoadTextureFromImage(unsigned int imagePtr) {
+    Image* image = cart_get_pointer(imagePtr, sizeof(Image));
+    Texture2D out = LoadTextureFromImage(*image);
+    free(image);
+    return cart_set_pointer(&out, sizeof(out));
+}
+
+EMSCRIPTEN_KEEPALIVE void host_DrawTexture(unsigned int texturePtr, int posX, int posY, unsigned int tintPtr) {
+    Texture2D* texture = cart_get_pointer(texturePtr, sizeof(Texture2D));
+    Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
+    DrawTexture(*texture, posX, posY, *tint);
+    free(texture);
+    free(tint);
+}
+
+EMSCRIPTEN_KEEPALIVE void host_UnloadImage(unsigned int imagePtr) {
+    Image* image = cart_get_pointer(imagePtr, sizeof(Image));
+    UnloadImage(*image);
 }
