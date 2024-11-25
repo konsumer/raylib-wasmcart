@@ -35,6 +35,16 @@ unsigned int cart_set_pointer(void* hostPtr, unsigned int len) {
     return cartPtr;
 }
 
+// copy a string from cart to host
+char* cart_get_string(unsigned int cartPtr) {
+    return wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+}
+
+// copy a string from host to cart
+unsigned int cart_set_string(char* hostPtr) {
+    return wasm_runtime_module_malloc(module_inst, strlen(hostPtr), NULL);
+}
+
 
 void host_ClearBackground(wasm_exec_env_t exec_env, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
@@ -42,9 +52,11 @@ void host_ClearBackground(wasm_exec_env_t exec_env, unsigned int colorPtr) {
     free(color);
 }
 
-void host_DrawText(wasm_exec_env_t exec_env, char* text, int posX, int posY, int fontSize, unsigned int colorPtr) {
+void host_DrawText(wasm_exec_env_t exec_env, unsigned int textPtr, int posX, int posY, int fontSize, unsigned int colorPtr) {
+    char* text = cart_get_string(textPtr);
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     DrawText(text, posX, posY, fontSize, *color);
+    free(text);
     free(color);
 }
 
@@ -53,9 +65,10 @@ void host_SetWindowSize(wasm_exec_env_t exec_env, int width, int height) {
     SetWindowSize(width, height);
 }
 
-unsigned int host_LoadImage(wasm_exec_env_t exec_env, char* filename) {
-    printf("LoadImage('%s')\n", filename);
+unsigned int host_LoadImage(wasm_exec_env_t exec_env, unsigned int filenamePtr) {
+    char* filename = cart_get_string(filenamePtr);
     Image out = LoadImage(filename);
+    free(filename);
     return cart_set_pointer(&out, sizeof(out));
 }
 
@@ -81,9 +94,9 @@ void host_UnloadImage(wasm_exec_env_t exec_env, unsigned int imagePtr) {
 
 static NativeSymbol native_symbols[] = {
     {"ClearBackground", host_ClearBackground, "(i)"},
-    {"DrawText", host_DrawText, "($iiii)"},
+    {"DrawText", host_DrawText, "(iiiii)"},
     {"SetWindowSize", host_SetWindowSize, "(ii)"},
-    {"LoadImage", host_LoadImage, "($)"},
+    {"LoadImage", host_LoadImage, "(i)"},
     {"LoadTextureFromImage", host_LoadTextureFromImage, "(i)i"},
     {"DrawTexture", host_DrawTexture, "(iiii)"},
     {"UnloadImage", host_UnloadImage, "(i)"},
