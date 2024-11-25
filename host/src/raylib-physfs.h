@@ -120,6 +120,156 @@ bool RaylibPhysFSSaveFileTextCallback(const char *fileName, char *text) {
     return true;
 }
 
+// these are similar to raylib file functions
+
+bool FileExistsFS(const char *fileName) {
+    PHYSFS_Stat stat;
+    if (!PHYSFS_stat(fileName, &stat)) return false;
+    return stat.filetype == PHYSFS_FILETYPE_REGULAR;
+}
+
+bool DirectoryExistsFS(const char *dirPath) {
+    PHYSFS_Stat stat;
+    if (!PHYSFS_stat(dirPath, &stat)) return false;
+    return stat.filetype == PHYSFS_FILETYPE_DIRECTORY;
+}
+
+int GetFileLengthFS(const char *fileName) {
+    PHYSFS_file *file = PHYSFS_openRead(fileName);
+    if (!file) return 0;
+    
+    PHYSFS_sint64 length = PHYSFS_fileLength(file);
+    PHYSFS_close(file);
+    return (int)length;
+}
+
+int MakeDirectoryFS(const char *dirPath) {
+    return PHYSFS_mkdir(dirPath) ? 0 : -1;
+}
+
+bool ChangeDirectoryFS(const char *dir) {
+    // PhysFS doesn't have a concept of "current directory"
+    // but we can check if the directory exists
+    return DirectoryExistsFS(dir);
+}
+
+bool IsPathFileFS(const char *path) {
+    return FileExistsFS(path);
+}
+
+FilePathList LoadDirectoryFilesFS(const char *dirPath) {
+    FilePathList list = { 0 };
+    char **files = PHYSFS_enumerateFiles(dirPath);
+    char **i;
+    
+    // First count the number of files
+    for (i = files; *i != NULL; i++) {
+        list.count++;
+    }
+    
+    if (list.count == 0) {
+        PHYSFS_freeList(files);
+        return list;
+    }
+    
+    // Allocate memory for paths
+    list.paths = (char **)MemAlloc(list.count * sizeof(char *));
+    
+    // Copy paths
+    int index = 0;
+    for (i = files; *i != NULL; i++) {
+        char fullPath[512];
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, *i);
+        list.paths[index] = (char *)MemAlloc(strlen(fullPath) + 1);
+        strcpy(list.paths[index], fullPath);
+        index++;
+    }
+    
+    PHYSFS_freeList(files);
+    return list;
+}
+
+FilePathList LoadDirectoryFilesExFS(const char *basePath, const char *filter, bool scanSubdirs) {
+    FilePathList list = { 0 };
+    char **files = PHYSFS_enumerateFiles(basePath);
+    char **i;
+    
+    // First pass: count matching files
+    for (i = files; *i != NULL; i++) {
+        char fullPath[512];
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", basePath, *i);
+        
+        PHYSFS_Stat stat;
+        if (!PHYSFS_stat(fullPath, &stat)) continue;
+        
+        if (stat.filetype == PHYSFS_FILETYPE_DIRECTORY && scanSubdirs) {
+            FilePathList subList = LoadDirectoryFilesExFS(fullPath, filter, true);
+            list.count += subList.count;
+            UnloadDirectoryFiles(subList); // Free temporary list
+        } else if (stat.filetype == PHYSFS_FILETYPE_REGULAR) {
+            // Check if file matches filter
+            if (filter && *filter) {
+                const char *ext = strrchr(*i, '.');
+                if (ext && strcasecmp(ext + 1, filter) == 0) {
+                    list.count++;
+                }
+            } else {
+                list.count++;
+            }
+        }
+    }
+    
+    if (list.count == 0) {
+        PHYSFS_freeList(files);
+        return list;
+    }
+    
+    // Allocate memory for paths
+    list.paths = (char **)MemAlloc(list.count * sizeof(char *));
+    int pathIndex = 0;
+    
+    // Second pass: copy matching files
+    for (i = files; *i != NULL; i++) {
+        char fullPath[512];
+        snprintf(fullPath, sizeof(fullPath), "%s/%s", basePath, *i);
+        
+        PHYSFS_Stat stat;
+        if (!PHYSFS_stat(fullPath, &stat)) continue;
+        
+        if (stat.filetype == PHYSFS_FILETYPE_DIRECTORY && scanSubdirs) {
+            FilePathList subList = LoadDirectoryFilesExFS(fullPath, filter, true);
+            for (int j = 0; j < subList.count; j++) {
+                list.paths[pathIndex] = (char *)MemAlloc(strlen(subList.paths[j]) + 1);
+                strcpy(list.paths[pathIndex], subList.paths[j]);
+                pathIndex++;
+            }
+            UnloadDirectoryFiles(subList);
+        } else if (stat.filetype == PHYSFS_FILETYPE_REGULAR) {
+            if (filter && *filter) {
+                const char *ext = strrchr(*i, '.');
+                if (ext && strcasecmp(ext + 1, filter) == 0) {
+                    list.paths[pathIndex] = (char *)MemAlloc(strlen(fullPath) + 1);
+                    strcpy(list.paths[pathIndex], fullPath);
+                    pathIndex++;
+                }
+            } else {
+                list.paths[pathIndex] = (char *)MemAlloc(strlen(fullPath) + 1);
+                strcpy(list.paths[pathIndex], fullPath);
+                pathIndex++;
+            }
+        }
+    }
+    
+    PHYSFS_freeList(files);
+    return list;
+}
+
+long GetFileModTimeFS(const char *fileName) {
+    PHYSFS_Stat stat;
+    if (!PHYSFS_stat(fileName, &stat)) return 0;
+    return (long)stat.modtime;
+}
+
 bool InitFS(char* filename){
     PHYSFS_ErrorCode error;
 

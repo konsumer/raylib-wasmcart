@@ -18,6 +18,14 @@ int main(int argc, char *argv[]) {
 
   DetectFileType cartType = detect_real_file_type(argv[1]);
 
+  /*
+  This handles these cases:
+
+  zip - primary usecase: mount zip, use  main.wasm in zip as main
+  dir/ - mount dir, use main.wasm in dir as main
+  whatever.wasm - mount dir it's in, use whatever.wasm as main
+  */
+
   char* wasmFilename = "main.wasm";
 
   if (cartType == FILE_TYPE_DIR || cartType == FILE_TYPE_ZIP) {
@@ -33,6 +41,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if (!FileExistsFS(wasmFilename)) {
+    TraceLog(LOG_ERROR, "Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
+    CloseWindow();
+    CloseFS();
+    return 1;
+  }
+
   int wasmBytesLen=0;
   unsigned char* wasmBytes = LoadFileData(wasmFilename, &wasmBytesLen);
 
@@ -41,10 +56,11 @@ int main(int argc, char *argv[]) {
   if (wasmBytesLen == 0 || parse_magic_bytes(magic_number) != FILE_TYPE_WASM) {
     TraceLog(LOG_ERROR, "Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
     CloseWindow();
+    CloseFS();
     return 1;
   }
 
-  TraceLog(LOG_INFO, "Good %s: %d", wasmFilename, wasmBytesLen);
+  TraceLog(LOG_INFO, "Entry point looks good %s: %d", wasmFilename, wasmBytesLen);
   null0_host_load(wasmBytes, wasmBytesLen);
   
   while (!WindowShouldClose()) {
