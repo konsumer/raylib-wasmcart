@@ -26,3 +26,19 @@ else()
     find_package(wamr)
     target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs vmlib)
 endif()
+
+
+add_executable("testfs")
+target_sources("testfs" PRIVATE src/testfs.c)
+target_link_libraries("testfs" PRIVATE physfs-static)
+if (EMSCRIPTEN)
+    set_target_properties(
+        "testfs" PROPERTIES
+        SUFFIX ".mjs"
+        LINK_FLAGS "-Oz -sFORCE_FILESYSTEM -sUSE_GLFW=3 -sASYNCIFY -sSINGLE_FILE -sMALLOC=emmalloc -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS=_malloc,_free,_main"
+    )
+    add_custom_command(TARGET "testfs" POST_BUILD
+    COMMAND "${CMAKE_COMMAND}" -E copy
+       "$<TARGET_FILE:testfs>"
+       "${PROJECT_SOURCE_DIR}/docs/$<TARGET_FILE_NAME:testfs>")
+endif()

@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="icon" type="image/x-icon" href="https://avatars.githubusercontent.com/u/10213618?s=96&v=4" />
+    <title>testfs</title>
+  </head>
+
+  <body>
+    <script type="module">
+      import setup from './testfs.mjs'
+
+      const host = await setup({
+        arguments: ['/cart.null0'],
+        preRun: async ({ FS_createPreloadedFile }) => {
+          await FS_createPreloadedFile("/", 'cart.null0', 'carts/hello.null0', true, false)
+        }
+      })
+    </script>
+  </body>
+</html>
