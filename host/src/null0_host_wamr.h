@@ -20,6 +20,21 @@ void* cart_get_pointer(unsigned int cartPtr, unsigned int len) {
     return out;
 }
 
+// copy a pointer from host to cart
+unsigned int cart_set_pointer(void* hostPtr, unsigned int len) {
+    unsigned int cartPtr = wasm_runtime_module_malloc(module_inst, len, NULL);
+    if (cartPtr == 0) {
+        return 0;
+    }
+    void* nativePtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+    if (!nativePtr) {
+        wasm_runtime_module_free(module_inst, cartPtr);
+        return 0;
+    }
+    memcpy(nativePtr, hostPtr, len);
+    return cartPtr;
+}
+
 
 void host_ClearBackground(wasm_exec_env_t exec_env, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
@@ -38,10 +53,40 @@ void host_SetWindowSize(wasm_exec_env_t exec_env, int width, int height) {
     SetWindowSize(width, height);
 }
 
+unsigned int host_LoadImage(wasm_exec_env_t exec_env, char* filename) {
+    printf("LoadImage('%s')\n", filename);
+    Image out = LoadImage(filename);
+    return cart_set_pointer(&out, sizeof(out));
+}
+
+unsigned int host_LoadTextureFromImage(wasm_exec_env_t exec_env, unsigned int imagePtr) {
+    Image* image = cart_get_pointer(imagePtr, sizeof(Image));
+    Texture2D out = LoadTextureFromImage(*image);
+    free(image);
+    return cart_set_pointer(&out, sizeof(out));
+}
+
+void host_DrawTexture(wasm_exec_env_t exec_env, unsigned int texturePtr, int posX, int posY, unsigned int tintPtr) {
+    Texture2D* texture = cart_get_pointer(texturePtr, sizeof(Texture2D));
+    Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
+    DrawTexture(*texture, posX, posY, *tint);
+    free(texture);
+    free(tint);
+}
+
+void host_UnloadImage(wasm_exec_env_t exec_env, unsigned int imagePtr) {
+    Image* image = cart_get_pointer(imagePtr, sizeof(Image));
+    UnloadImage(*image);
+}
+
 static NativeSymbol native_symbols[] = {
     {"ClearBackground", host_ClearBackground, "(i)"},
     {"DrawText", host_DrawText, "($iiii)"},
     {"SetWindowSize", host_SetWindowSize, "(ii)"},
+    {"LoadImage", host_LoadImage, "($)"},
+    {"LoadTextureFromImage", host_LoadTextureFromImage, "(i)i"},
+    {"DrawTexture", host_DrawTexture, "(iiii)"},
+    {"UnloadImage", host_UnloadImage, "(i)"},
 };
 
 // called on cart init
