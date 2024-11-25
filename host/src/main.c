@@ -33,16 +33,16 @@ int main(int argc, char *argv[]) {
   } else if (cartType == FILE_TYPE_WASM) {
     char* d = GetDirectoryPath(argv[1]);
     wasmFilename = GetFileName(argv[1]);
-    TraceLog(LOG_INFO, "Mounting directory of wasm-file: %s", d);
+    TraceLog(LOG_INFO, "FS: Mounting directory of wasm-file: %s", d);
     InitFS(d);
   } else {
-    TraceLog(LOG_ERROR, "Cart should be a dir/wasm/zip file.");
+    TraceLog(LOG_ERROR, "FS: Cart should be a dir/wasm/zip file.");
     CloseWindow();
     return 1;
   }
 
   if (!FileExistsFS(wasmFilename)) {
-    TraceLog(LOG_ERROR, "Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
+    TraceLog(LOG_ERROR, "FS: Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
     CloseWindow();
     CloseFS();
     return 1;
@@ -54,13 +54,13 @@ int main(int argc, char *argv[]) {
   unsigned int magic_number = 0;
   memcpy(&magic_number, wasmBytes, sizeof(unsigned int));
   if (wasmBytesLen == 0 || parse_magic_bytes(magic_number) != FILE_TYPE_WASM) {
-    TraceLog(LOG_ERROR, "Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
+    TraceLog(LOG_ERROR, "FS: Cart should contain a valid %s. It is the wasm entry-point.", wasmFilename);
     CloseWindow();
     CloseFS();
     return 1;
   }
 
-  TraceLog(LOG_INFO, "Entry point looks good %s: %d", wasmFilename, wasmBytesLen);
+  TraceLog(LOG_INFO, "FS: Entry point looks good %s: %d", wasmFilename, wasmBytesLen);
   null0_host_load(wasmBytes, wasmBytesLen);
   
   while (!WindowShouldClose()) {

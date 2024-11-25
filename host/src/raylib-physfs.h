@@ -277,20 +277,20 @@ bool InitFS(char* filename){
         if (!PHYSFS_init("/")) {
             error = PHYSFS_getLastErrorCode();
             char* errorMsg = PHYSFS_getErrorByCode(error);
-            TraceLog(LOG_ERROR, "PhysFS - Init %d: %s\n", error, errorMsg);
+            TraceLog(LOG_ERROR, "FS: Init %d: %s\n", error, errorMsg);
             return false;
         }
     } else {
         if (!PHYSFS_init(filename)) {
             error = PHYSFS_getLastErrorCode();
             char* errorMsg = PHYSFS_getErrorByCode(error);
-            TraceLog(LOG_ERROR, "PhysFS - Init %d: %s\n", error, errorMsg);
+            TraceLog(LOG_ERROR, "FS: Init %d: %s\n", error, errorMsg);
             return false;
         }
         if (!PHYSFS_mount(filename, "/", 0)) {
             error = PHYSFS_getLastErrorCode();
             char* errorMsg = PHYSFS_getErrorByCode(error);
-            TraceLog(LOG_ERROR, "PhysFS - Mount %d: %s\n", error, errorMsg);
+            TraceLog(LOG_ERROR, "FS: Mount %d: %s\n", error, errorMsg);
             return false;
         }
     }
@@ -300,7 +300,7 @@ bool InitFS(char* filename){
     SetLoadFileTextCallback(RaylibPhysFSLoadFileTextCallback);
     SetSaveFileTextCallback(RaylibPhysFSSaveFileTextCallback);
 
-    TraceLog(LOG_INFO, "Initialized filesystem (%s)", filename);
+    TraceLog(LOG_INFO, "FS: Initialized filesystem (%s)", filename);
     return true;
 }
 
