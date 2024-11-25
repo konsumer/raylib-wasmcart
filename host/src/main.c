@@ -2,6 +2,24 @@
 #include "raylib-physfs.h"
 #include "file_detect.h"
 
+// implement these in your host:
+
+// HELPERS
+// copy a pointer from cart to host
+void* cart_get_pointer(unsigned int cartPtr, unsigned int len);
+
+// copy a pointer from host to cart
+unsigned int cart_set_pointer(void* hostPtr, unsigned int len);
+
+// copy a string from cart to host
+char* cart_get_string(unsigned int cartPtr);
+
+// copy a string from host to cart
+unsigned int cart_set_string(char* hostPtr);
+
+// TODO: setup a macro that can generate code for both hosts
+
+
 #ifdef EMSCRIPTEN
 #include "null0_host_emscripten.h"
 #else
