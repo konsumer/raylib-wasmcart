@@ -1,6 +1,5 @@
 find_package(raylib)
 find_package(physfs)
-find_package(raylibphysfs)
 
 # copy a taget build-product to the webroot
 function(COPY_TO_WEB name)
@@ -14,7 +13,7 @@ endfunction()
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE src/main.c)
 if (EMSCRIPTEN)
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs)
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static)
     set_target_properties(
         ${PROJECT_NAME} PROPERTIES
         SUFFIX ".mjs"
@@ -24,19 +23,5 @@ if (EMSCRIPTEN)
     COPY_TO_WEB(${PROJECT_NAME})
 else()
     find_package(wamr)
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static raylib_physfs vmlib)
-endif()
-
-
-add_executable("testfs")
-target_sources("testfs" PRIVATE src/testfs.c)
-target_link_libraries("testfs" PRIVATE physfs-static)
-if (EMSCRIPTEN)
-    set_target_properties(
-        "testfs" PROPERTIES
-        SUFFIX ".mjs"
-        COMPILE_FLAGS "-Oz"
-        LINK_FLAGS "-Oz -sFORCE_FILESYSTEM -sUSE_GLFW=3 -sASYNCIFY -sSINGLE_FILE -sMALLOC=emmalloc -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS=_malloc,_free,_main"
-    )
-    COPY_TO_WEB("testfs")
+    target_link_libraries(${PROJECT_NAME} PRIVATE raylib physfs-static vmlib)
 endif()
