@@ -4,7 +4,8 @@
 
 // implement these in your host:
 
-// HELPERS
+// MEMORY
+
 // copy a pointer from cart to host
 void* cart_get_pointer(unsigned int cartPtr, unsigned int len);
 
@@ -17,8 +18,19 @@ char* cart_get_string(unsigned int cartPtr);
 // copy a string from host to cart
 unsigned int cart_set_string(char* hostPtr);
 
-// TODO: setup a macro that can generate code for both hosts
+// allocate cart-memory from host C
+unsigned int cart_malloc(int size);
 
+// free cart-memory from host C
+void cart_free (unsigned int ptr);
+
+// LIFECYCLE
+
+// called on cart update
+void null0_host_update(double timeMs);
+
+// called on cart unload
+void null0_host_unload();
 
 #ifdef EMSCRIPTEN
 #include "null0_host_emscripten.h"
