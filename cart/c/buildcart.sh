@@ -10,18 +10,22 @@ WASM_DIR=$(dirname "${2}")
 FILES_DIR="${3}"
 WEB_DIR="${4}"
 
-echo "Build Cart:"
-echo "  CART: ${CART}"
-echo "  WASM: ${WASM}"
-echo "  WASM_DIR: ${WASM_DIR}"
-echo "  FILES_DIR: ${FILES_DIR}"
-echo "  WEB_DIR: ${WEB_DIR}"
+printf "\nBuild Cart:\n"
+printf "  CART: %s\n" "${CART}"
+printf "  WASM: %s\n" "${WASM}"
+printf "  WASM_DIR: %s\n" "${WASM_DIR}"
+printf "  FILES_DIR: %s\n" "${FILES_DIR}"
+printf "  WEB_DIR: %s\n" "${WEB_DIR}"
 
 cp "${WASM_DIR}/${WASM}" "${FILES_DIR}/main.wasm"
 cd "${FILES_DIR}"
 
 shopt -s extglob
-ls -c1 main.wasm **/!(*.c|*.h|.DS_Store|__*) !(*.c|*.h|.DS_Store|__*)
+
+files=$(ls -c1 **/!(*.c|*.h|.DS_Store|__*) !(*.c|*.h|.DS_Store|__*) 2>/dev/null)
+printf "\nFiles added:\n"
+printf "  %s\n" $files
+
 zip -rq "${CART}" main.wasm **/!(*.c|*.h|.DS_Store|__*) !(*.c|*.h|.DS_Store|__*)
 shopt -u extglob
 

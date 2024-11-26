@@ -18,6 +18,7 @@ if (EMSCRIPTEN)
         ${PROJECT_NAME} PROPERTIES
         SUFFIX ".mjs"
         COMPILE_FLAGS "-Oz"
+        # add this for debugging: -sASSERTIONS=2 
         LINK_FLAGS "-Oz -sFORCE_FILESYSTEM -sUSE_GLFW=3 -sASYNCIFY -sSINGLE_FILE -sMALLOC=emmalloc -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS=_malloc,_free,_main"
     )
     COPY_TO_WEB(${PROJECT_NAME})

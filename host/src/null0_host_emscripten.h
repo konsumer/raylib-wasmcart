@@ -21,8 +21,8 @@ EM_JS(void*, cart_get_pointer, (unsigned int cartPtr, unsigned int len), {
 });
 
 // copy a pointer from host to cart
-EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len), {
-  const cartPtr = Module.cart.malloc(len);
+EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len, unsigned int cartPtr), {
+  cartPtr = cartPtr || Module.cart.malloc(len);
   new Uint8Array(Module.cart.memory.buffer).set(Module.HEAPU8.slice(hostPtr, hostPtr + len), cartPtr);
   return cartPtr;
 });
@@ -164,9 +164,9 @@ EMSCRIPTEN_KEEPALIVE void host_SetWindowFocused() {
     SetWindowFocused();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWindowHandle() {
+EMSCRIPTEN_KEEPALIVE void host_GetWindowHandle(unsigned int outPtr) {
     void * out = GetWindowHandle();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetScreenWidth() {
@@ -193,9 +193,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetCurrentMonitor() {
     return GetCurrentMonitor();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMonitorPosition(unsigned int monitorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetMonitorPosition(unsigned int outPtr, unsigned int monitorPtr) {
     Vector2 out = GetMonitorPosition(monitorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetMonitorWidth(unsigned int monitorPtr) {
@@ -218,19 +218,19 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetMonitorRefreshRate(unsigned int monito
     return GetMonitorRefreshRate(monitorPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWindowPosition() {
+EMSCRIPTEN_KEEPALIVE void host_GetWindowPosition(unsigned int outPtr) {
     Vector2 out = GetWindowPosition();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWindowScaleDPI() {
+EMSCRIPTEN_KEEPALIVE void host_GetWindowScaleDPI(unsigned int outPtr) {
     Vector2 out = GetWindowScaleDPI();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMonitorName(unsigned int monitorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetMonitorName(unsigned int outPtr, unsigned int monitorPtr) {
     const char * out = GetMonitorName(monitorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetClipboardText(unsigned int textPtr) {
@@ -239,9 +239,9 @@ EMSCRIPTEN_KEEPALIVE void host_SetClipboardText(unsigned int textPtr) {
     free((void*)text);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetClipboardText() {
+EMSCRIPTEN_KEEPALIVE void host_GetClipboardText(unsigned int outPtr) {
     const char * out = GetClipboardText();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_EnableEventWaiting() {
@@ -356,11 +356,11 @@ EMSCRIPTEN_KEEPALIVE void host_EndVrStereoMode() {
     EndVrStereoMode();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadVrStereoConfig(unsigned int devicePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadVrStereoConfig(unsigned int outPtr, unsigned int devicePtr) {
     VrDeviceInfo* device = cart_get_pointer(devicePtr, sizeof(VrDeviceInfo));
     VrStereoConfig out = LoadVrStereoConfig(*device);
     free((void*)device);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadVrStereoConfig(unsigned int configPtr) {
@@ -369,22 +369,22 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadVrStereoConfig(unsigned int configPtr) {
     free((void*)config);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadShader(unsigned int vsFileNamePtr, unsigned int fsFileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadShader(unsigned int outPtr, unsigned int vsFileNamePtr, unsigned int fsFileNamePtr) {
     const char* vsFileName = cart_get_string(vsFileNamePtr);
     const char* fsFileName = cart_get_string(fsFileNamePtr);
     Shader out = LoadShader(vsFileName, fsFileName);
     free((void*)vsFileName);
     free((void*)fsFileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadShaderFromMemory(unsigned int vsCodePtr, unsigned int fsCodePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadShaderFromMemory(unsigned int outPtr, unsigned int vsCodePtr, unsigned int fsCodePtr) {
     const char* vsCode = cart_get_string(vsCodePtr);
     const char* fsCode = cart_get_string(fsCodePtr);
     Shader out = LoadShaderFromMemory(vsCode, fsCode);
     free((void*)vsCode);
     free((void*)fsCode);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsShaderValid(unsigned int shaderPtr) {
@@ -447,72 +447,72 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadShader(unsigned int shaderPtr) {
     free((void*)shader);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetScreenToWorldRay(unsigned int positionPtr, unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetScreenToWorldRay(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Ray out = GetScreenToWorldRay(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetScreenToWorldRayEx(unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetScreenToWorldRayEx(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Ray out = GetScreenToWorldRayEx(*position, *camera, widthPtr, heightPtr);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWorldToScreen(unsigned int positionPtr, unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetWorldToScreen(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector3* position = cart_get_pointer(positionPtr, sizeof(Vector3));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Vector2 out = GetWorldToScreen(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWorldToScreenEx(unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetWorldToScreenEx(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
     Vector3* position = cart_get_pointer(positionPtr, sizeof(Vector3));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Vector2 out = GetWorldToScreenEx(*position, *camera, widthPtr, heightPtr);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWorldToScreen2D(unsigned int positionPtr, unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetWorldToScreen2D(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Vector2 out = GetWorldToScreen2D(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetScreenToWorld2D(unsigned int positionPtr, unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetScreenToWorld2D(unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Vector2 out = GetScreenToWorld2D(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetCameraMatrix(unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetCameraMatrix(unsigned int outPtr, unsigned int cameraPtr) {
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Matrix out = GetCameraMatrix(*camera);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetCameraMatrix2D(unsigned int cameraPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetCameraMatrix2D(unsigned int outPtr, unsigned int cameraPtr) {
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Matrix out = GetCameraMatrix2D(*camera);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetTargetFPS(unsigned int fpsPtr) {
@@ -551,9 +551,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetRandomValue(unsigned int minPtr, unsig
     return GetRandomValue(minPtr, maxPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadRandomSequence(unsigned int countPtr, unsigned int minPtr, unsigned int maxPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadRandomSequence(unsigned int outPtr, unsigned int countPtr, unsigned int minPtr, unsigned int maxPtr) {
     int * out = LoadRandomSequence(countPtr, minPtr, maxPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadRandomSequence(unsigned int sequencePtr) {
@@ -582,16 +582,16 @@ EMSCRIPTEN_KEEPALIVE void host_SetTraceLogLevel(unsigned int logLevelPtr) {
     SetTraceLogLevel(logLevelPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_MemAlloc(unsigned int sizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_MemAlloc(unsigned int outPtr, unsigned int sizePtr) {
     void * out = MemAlloc(sizePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_MemRealloc(unsigned int ptrPtr, unsigned int sizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_MemRealloc(unsigned int outPtr, unsigned int ptrPtr, unsigned int sizePtr) {
     void ** ptr = cart_get_pointer(ptrPtr, sizeof(void *));
     void * out = MemRealloc(ptr, sizePtr);
     free((void*)ptr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_MemFree(unsigned int ptrPtr) {
@@ -630,13 +630,13 @@ EMSCRIPTEN_KEEPALIVE void host_SetSaveFileTextCallback(unsigned int callbackPtr)
     free((void*)callback);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFileData(unsigned int fileNamePtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFileData(unsigned int outPtr, unsigned int fileNamePtr, unsigned int dataSizePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** dataSize = cart_get_pointer(dataSizePtr, sizeof(int *));
     unsigned char * out = LoadFileData(fileName, dataSize);
     free((void*)fileName);
     free((void*)dataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadFileData(unsigned int dataPtr) {
@@ -661,11 +661,11 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ExportDataAsCode(unsigned int dataPtr, un
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFileText(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFileText(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     char * out = LoadFileText(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadFileText(unsigned int textPtr) {
@@ -684,13 +684,13 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_SaveFileText(unsigned int fileNamePtr, un
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_FileExists(unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    return FileExists(fileName);
+    return FileExistsFS(fileName);
     free((void*)fileName);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_DirectoryExists(unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
-    return DirectoryExists(dirPath);
+    return DirectoryExistsFS(dirPath);
     free((void*)dirPath);
 }
 
@@ -704,53 +704,53 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsFileExtension(unsigned int fileNamePtr,
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetFileLength(unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    return GetFileLength(fileName);
+    return GetFileLengthFS(fileName);
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetFileExtension(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetFileExtension(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     const char * out = GetFileExtension(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetFileName(unsigned int filePathPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetFileName(unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetFileName(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetFileNameWithoutExt(unsigned int filePathPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetFileNameWithoutExt(unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetFileNameWithoutExt(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetDirectoryPath(unsigned int filePathPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetDirectoryPath(unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetDirectoryPath(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetPrevDirectoryPath(unsigned int dirPathPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetPrevDirectoryPath(unsigned int outPtr, unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
     const char * out = GetPrevDirectoryPath(dirPath);
     free((void*)dirPath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetWorkingDirectory() {
+EMSCRIPTEN_KEEPALIVE void host_GetWorkingDirectory(unsigned int outPtr) {
     const char * out = GetWorkingDirectory();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetApplicationDirectory() {
+EMSCRIPTEN_KEEPALIVE void host_GetApplicationDirectory(unsigned int outPtr) {
     const char * out = GetApplicationDirectory();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_MakeDirectory(unsigned int dirPathPtr) {
@@ -761,13 +761,13 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_MakeDirectory(unsigned int dirPathPtr) {
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_ChangeDirectory(unsigned int dirPtr) {
     const char* dir = cart_get_string(dirPtr);
-    return ChangeDirectory(dir);
+    return ChangeDirectoryFS(dir);
     free((void*)dir);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsPathFile(unsigned int pathPtr) {
     const char* path = cart_get_string(pathPtr);
-    return IsPathFile(path);
+    return IsPathFileFS(path);
     free((void*)path);
 }
 
@@ -777,20 +777,20 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsFileNameValid(unsigned int fileNamePtr)
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadDirectoryFiles(unsigned int dirPathPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadDirectoryFiles(unsigned int outPtr, unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
-    FilePathList out = LoadDirectoryFiles(dirPath);
+    FilePathList out = LoadDirectoryFilesFS(dirPath);
     free((void*)dirPath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadDirectoryFilesEx(unsigned int basePathPtr, unsigned int filterPtr, unsigned int scanSubdirsPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadDirectoryFilesEx(unsigned int outPtr, unsigned int basePathPtr, unsigned int filterPtr, unsigned int scanSubdirsPtr) {
     const char* basePath = cart_get_string(basePathPtr);
     const char* filter = cart_get_string(filterPtr);
-    FilePathList out = LoadDirectoryFilesEx(basePath, filter, scanSubdirsPtr);
+    FilePathList out = LoadDirectoryFilesExFS(basePath, filter, scanSubdirsPtr);
     free((void*)basePath);
     free((void*)filter);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadDirectoryFiles(unsigned int filesPtr) {
@@ -803,9 +803,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsFileDropped() {
     return IsFileDropped();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadDroppedFiles() {
+EMSCRIPTEN_KEEPALIVE void host_LoadDroppedFiles(unsigned int outPtr) {
     FilePathList out = LoadDroppedFiles();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadDroppedFiles(unsigned int filesPtr) {
@@ -816,45 +816,44 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadDroppedFiles(unsigned int filesPtr) {
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetFileModTime(unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    long out = GetFileModTime(fileName);
+    return GetFileModTimeFS(fileName);
     free((void*)fileName);
-    return out;
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_CompressData(unsigned int dataPtr, unsigned int dataSizePtr, unsigned int compDataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_CompressData(unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int compDataSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** compDataSize = cart_get_pointer(compDataSizePtr, sizeof(int *));
     unsigned char * out = CompressData(data, dataSizePtr, compDataSize);
     free((void*)data);
     free((void*)compDataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_DecompressData(unsigned int compDataPtr, unsigned int compDataSizePtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_DecompressData(unsigned int outPtr, unsigned int compDataPtr, unsigned int compDataSizePtr, unsigned int dataSizePtr) {
     const unsigned char ** compData = cart_get_pointer(compDataPtr, sizeof(const unsigned char *));
     int ** dataSize = cart_get_pointer(dataSizePtr, sizeof(int *));
     unsigned char * out = DecompressData(compData, compDataSizePtr, dataSize);
     free((void*)compData);
     free((void*)dataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_EncodeDataBase64(unsigned int dataPtr, unsigned int dataSizePtr, unsigned int outputSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_EncodeDataBase64(unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int outputSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** outputSize = cart_get_pointer(outputSizePtr, sizeof(int *));
     char * out = EncodeDataBase64(data, dataSizePtr, outputSize);
     free((void*)data);
     free((void*)outputSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_DecodeDataBase64(unsigned int dataPtr, unsigned int outputSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_DecodeDataBase64(unsigned int outPtr, unsigned int dataPtr, unsigned int outputSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** outputSize = cart_get_pointer(outputSizePtr, sizeof(int *));
     unsigned char * out = DecodeDataBase64(data, outputSize);
     free((void*)data);
     free((void*)outputSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_ComputeCRC32(unsigned int dataPtr, unsigned int dataSizePtr) {
@@ -863,25 +862,25 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ComputeCRC32(unsigned int dataPtr, unsign
     free((void*)data);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ComputeMD5(unsigned int dataPtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_ComputeMD5(unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     unsigned char ** data = cart_get_pointer(dataPtr, sizeof(unsigned char *));
     unsigned int * out = ComputeMD5(data, dataSizePtr);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ComputeSHA1(unsigned int dataPtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_ComputeSHA1(unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     unsigned char ** data = cart_get_pointer(dataPtr, sizeof(unsigned char *));
     unsigned int * out = ComputeSHA1(data, dataSizePtr);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadAutomationEventList(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadAutomationEventList(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     AutomationEventList out = LoadAutomationEventList(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadAutomationEventList(unsigned int listPtr) {
@@ -958,9 +957,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsGamepadAvailable(unsigned int gamepadPt
     return IsGamepadAvailable(gamepadPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetGamepadName(unsigned int gamepadPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetGamepadName(unsigned int outPtr, unsigned int gamepadPtr) {
     const char * out = GetGamepadName(gamepadPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsGamepadButtonPressed(unsigned int gamepadPtr, unsigned int buttonPtr) {
@@ -1025,14 +1024,14 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetMouseY() {
     return GetMouseY();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMousePosition() {
+EMSCRIPTEN_KEEPALIVE void host_GetMousePosition(unsigned int outPtr) {
     Vector2 out = GetMousePosition();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMouseDelta() {
+EMSCRIPTEN_KEEPALIVE void host_GetMouseDelta(unsigned int outPtr) {
     Vector2 out = GetMouseDelta();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetMousePosition(unsigned int xPtr, unsigned int yPtr) {
@@ -1051,9 +1050,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetMouseWheelMove() {
     return GetMouseWheelMove();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMouseWheelMoveV() {
+EMSCRIPTEN_KEEPALIVE void host_GetMouseWheelMoveV(unsigned int outPtr) {
     Vector2 out = GetMouseWheelMoveV();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetMouseCursor(unsigned int cursorPtr) {
@@ -1068,9 +1067,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetTouchY() {
     return GetTouchY();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetTouchPosition(unsigned int indexPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetTouchPosition(unsigned int outPtr, unsigned int indexPtr) {
     Vector2 out = GetTouchPosition(indexPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetTouchPointId(unsigned int indexPtr) {
@@ -1097,18 +1096,18 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetGestureHoldDuration() {
     return GetGestureHoldDuration();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetGestureDragVector() {
+EMSCRIPTEN_KEEPALIVE void host_GetGestureDragVector(unsigned int outPtr) {
     Vector2 out = GetGestureDragVector();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetGestureDragAngle() {
     return GetGestureDragAngle();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetGesturePinchVector() {
+EMSCRIPTEN_KEEPALIVE void host_GetGesturePinchVector(unsigned int outPtr) {
     Vector2 out = GetGesturePinchVector();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetGesturePinchAngle() {
@@ -1139,14 +1138,14 @@ EMSCRIPTEN_KEEPALIVE void host_SetShapesTexture(unsigned int texturePtr, unsigne
     free((void*)source);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetShapesTexture() {
+EMSCRIPTEN_KEEPALIVE void host_GetShapesTexture(unsigned int outPtr) {
     Texture2D out = GetShapesTexture();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetShapesTextureRectangle() {
+EMSCRIPTEN_KEEPALIVE void host_GetShapesTextureRectangle(unsigned int outPtr) {
     Rectangle out = GetShapesTextureRectangle();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_DrawPixel(unsigned int posXPtr, unsigned int posYPtr, unsigned int colorPtr) {
@@ -1557,16 +1556,16 @@ EMSCRIPTEN_KEEPALIVE void host_DrawSplineSegmentBezierCubic(unsigned int p1Ptr, 
     free((void*)color);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointLinear(unsigned int startPosPtr, unsigned int endPosPtr, unsigned int tPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetSplinePointLinear(unsigned int outPtr, unsigned int startPosPtr, unsigned int endPosPtr, unsigned int tPtr) {
     Vector2* startPos = cart_get_pointer(startPosPtr, sizeof(Vector2));
     Vector2* endPos = cart_get_pointer(endPosPtr, sizeof(Vector2));
     Vector2 out = GetSplinePointLinear(*startPos, *endPos, tPtr);
     free((void*)startPos);
     free((void*)endPos);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBasis(unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetSplinePointBasis(unsigned int outPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* p2 = cart_get_pointer(p2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1576,10 +1575,10 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBasis(unsigned int p1Ptr, u
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointCatmullRom(unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetSplinePointCatmullRom(unsigned int outPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* p2 = cart_get_pointer(p2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1589,10 +1588,10 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointCatmullRom(unsigned int p1P
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBezierQuad(unsigned int p1Ptr, unsigned int c2Ptr, unsigned int p3Ptr, unsigned int tPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetSplinePointBezierQuad(unsigned int outPtr, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int p3Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* c2 = cart_get_pointer(c2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1600,10 +1599,10 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBezierQuad(unsigned int p1P
     free((void*)p1);
     free((void*)c2);
     free((void*)p3);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBezierCubic(unsigned int p1Ptr, unsigned int c2Ptr, unsigned int c3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetSplinePointBezierCubic(unsigned int outPtr, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int c3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* c2 = cart_get_pointer(c2Ptr, sizeof(Vector2));
     Vector2* c3 = cart_get_pointer(c3Ptr, sizeof(Vector2));
@@ -1613,7 +1612,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetSplinePointBezierCubic(unsigned int p1
     free((void*)c2);
     free((void*)c3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_CheckCollisionRecs(unsigned int rec1Ptr, unsigned int rec2Ptr) {
@@ -1710,39 +1709,39 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_CheckCollisionLines(unsigned int startPos
     free((void*)collisionPoint);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetCollisionRec(unsigned int rec1Ptr, unsigned int rec2Ptr) {
+EMSCRIPTEN_KEEPALIVE void host_GetCollisionRec(unsigned int outPtr, unsigned int rec1Ptr, unsigned int rec2Ptr) {
     Rectangle* rec1 = cart_get_pointer(rec1Ptr, sizeof(Rectangle));
     Rectangle* rec2 = cart_get_pointer(rec2Ptr, sizeof(Rectangle));
     Rectangle out = GetCollisionRec(*rec1, *rec2);
     free((void*)rec1);
     free((void*)rec2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImage(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImage(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Image out = LoadImage(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageRaw(unsigned int fileNamePtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int formatPtr, unsigned int headerSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageRaw(unsigned int outPtr, unsigned int fileNamePtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int formatPtr, unsigned int headerSizePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Image out = LoadImageRaw(fileName, widthPtr, heightPtr, formatPtr, headerSizePtr);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageAnim(unsigned int fileNamePtr, unsigned int framesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageAnim(unsigned int outPtr, unsigned int fileNamePtr, unsigned int framesPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** frames = cart_get_pointer(framesPtr, sizeof(int *));
     Image out = LoadImageAnim(fileName, frames);
     free((void*)fileName);
     free((void*)frames);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageAnimFromMemory(unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int framesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageAnimFromMemory(unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int framesPtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** frames = cart_get_pointer(framesPtr, sizeof(int *));
@@ -1750,28 +1749,28 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageAnimFromMemory(unsigned int file
     free((void*)fileType);
     free((void*)fileData);
     free((void*)frames);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageFromMemory(unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageFromMemory(unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     Image out = LoadImageFromMemory(fileType, fileData, dataSizePtr);
     free((void*)fileType);
     free((void*)fileData);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageFromTexture(unsigned int texturePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageFromTexture(unsigned int outPtr, unsigned int texturePtr) {
     Texture2D* texture = cart_get_pointer(texturePtr, sizeof(Texture2D));
     Image out = LoadImageFromTexture(*texture);
     free((void*)texture);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageFromScreen() {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageFromScreen(unsigned int outPtr) {
     Image out = LoadImageFromScreen();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsImageValid(unsigned int imagePtr) {
@@ -1794,7 +1793,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ExportImage(unsigned int imagePtr, unsign
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ExportImageToMemory(unsigned int imagePtr, unsigned int fileTypePtr, unsigned int fileSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_ExportImageToMemory(unsigned int outPtr, unsigned int imagePtr, unsigned int fileTypePtr, unsigned int fileSizePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     const char* fileType = cart_get_string(fileTypePtr);
     int ** fileSize = cart_get_pointer(fileSizePtr, sizeof(int *));
@@ -1802,7 +1801,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ExportImageToMemory(unsigned int imagePtr
     free((void*)image);
     free((void*)fileType);
     free((void*)fileSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_ExportImageAsCode(unsigned int imagePtr, unsigned int fileNamePtr) {
@@ -1813,104 +1812,104 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ExportImageAsCode(unsigned int imagePtr, 
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageColor(unsigned int widthPtr, unsigned int heightPtr, unsigned int colorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageColor(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Image out = GenImageColor(widthPtr, heightPtr, *color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageGradientLinear(unsigned int widthPtr, unsigned int heightPtr, unsigned int directionPtr, unsigned int startPtr, unsigned int endPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageGradientLinear(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int directionPtr, unsigned int startPtr, unsigned int endPtr) {
     Color* start = cart_get_pointer(startPtr, sizeof(Color));
     Color* end = cart_get_pointer(endPtr, sizeof(Color));
     Image out = GenImageGradientLinear(widthPtr, heightPtr, directionPtr, *start, *end);
     free((void*)start);
     free((void*)end);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageGradientRadial(unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageGradientRadial(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
     Color* inner = cart_get_pointer(innerPtr, sizeof(Color));
     Color* outer = cart_get_pointer(outerPtr, sizeof(Color));
     Image out = GenImageGradientRadial(widthPtr, heightPtr, densityPtr, *inner, *outer);
     free((void*)inner);
     free((void*)outer);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageGradientSquare(unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageGradientSquare(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
     Color* inner = cart_get_pointer(innerPtr, sizeof(Color));
     Color* outer = cart_get_pointer(outerPtr, sizeof(Color));
     Image out = GenImageGradientSquare(widthPtr, heightPtr, densityPtr, *inner, *outer);
     free((void*)inner);
     free((void*)outer);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageChecked(unsigned int widthPtr, unsigned int heightPtr, unsigned int checksXPtr, unsigned int checksYPtr, unsigned int col1Ptr, unsigned int col2Ptr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageChecked(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int checksXPtr, unsigned int checksYPtr, unsigned int col1Ptr, unsigned int col2Ptr) {
     Color* col1 = cart_get_pointer(col1Ptr, sizeof(Color));
     Color* col2 = cart_get_pointer(col2Ptr, sizeof(Color));
     Image out = GenImageChecked(widthPtr, heightPtr, checksXPtr, checksYPtr, *col1, *col2);
     free((void*)col1);
     free((void*)col2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageWhiteNoise(unsigned int widthPtr, unsigned int heightPtr, unsigned int factorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageWhiteNoise(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int factorPtr) {
     Image out = GenImageWhiteNoise(widthPtr, heightPtr, factorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImagePerlinNoise(unsigned int widthPtr, unsigned int heightPtr, unsigned int offsetXPtr, unsigned int offsetYPtr, unsigned int scalePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImagePerlinNoise(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int offsetXPtr, unsigned int offsetYPtr, unsigned int scalePtr) {
     Image out = GenImagePerlinNoise(widthPtr, heightPtr, offsetXPtr, offsetYPtr, scalePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageCellular(unsigned int widthPtr, unsigned int heightPtr, unsigned int tileSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageCellular(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int tileSizePtr) {
     Image out = GenImageCellular(widthPtr, heightPtr, tileSizePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageText(unsigned int widthPtr, unsigned int heightPtr, unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageText(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     Image out = GenImageText(widthPtr, heightPtr, text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ImageCopy(unsigned int imagePtr) {
+EMSCRIPTEN_KEEPALIVE void host_ImageCopy(unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Image out = ImageCopy(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ImageFromImage(unsigned int imagePtr, unsigned int recPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ImageFromImage(unsigned int outPtr, unsigned int imagePtr, unsigned int recPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Rectangle* rec = cart_get_pointer(recPtr, sizeof(Rectangle));
     Image out = ImageFromImage(*image, *rec);
     free((void*)image);
     free((void*)rec);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ImageFromChannel(unsigned int imagePtr, unsigned int selectedChannelPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ImageFromChannel(unsigned int outPtr, unsigned int imagePtr, unsigned int selectedChannelPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Image out = ImageFromChannel(*image, selectedChannelPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ImageText(unsigned int textPtr, unsigned int fontSizePtr, unsigned int colorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ImageText(unsigned int outPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int colorPtr) {
     const char* text = cart_get_string(textPtr);
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Image out = ImageText(text, fontSizePtr, *color);
     free((void*)text);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ImageTextEx(unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr, unsigned int tintPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ImageTextEx(unsigned int outPtr, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr, unsigned int tintPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     const char* text = cart_get_string(textPtr);
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
@@ -1918,7 +1917,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ImageTextEx(unsigned int fontPtr, unsigne
     free((void*)font);
     free((void*)text);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_ImageFormat(unsigned int imagePtr, unsigned int newFormatPtr) {
@@ -2089,20 +2088,20 @@ EMSCRIPTEN_KEEPALIVE void host_ImageColorReplace(unsigned int imagePtr, unsigned
     free((void*)replace);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImageColors(unsigned int imagePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImageColors(unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color * out = LoadImageColors(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadImagePalette(unsigned int imagePtr, unsigned int maxPaletteSizePtr, unsigned int colorCountPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadImagePalette(unsigned int outPtr, unsigned int imagePtr, unsigned int maxPaletteSizePtr, unsigned int colorCountPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     int ** colorCount = cart_get_pointer(colorCountPtr, sizeof(int *));
     Color * out = LoadImagePalette(*image, maxPaletteSizePtr, colorCount);
     free((void*)image);
     free((void*)colorCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadImageColors(unsigned int colorsPtr) {
@@ -2117,18 +2116,18 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadImagePalette(unsigned int colorsPtr) {
     free((void*)colors);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetImageAlphaBorder(unsigned int imagePtr, unsigned int thresholdPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetImageAlphaBorder(unsigned int outPtr, unsigned int imagePtr, unsigned int thresholdPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Rectangle out = GetImageAlphaBorder(*image, thresholdPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetImageColor(unsigned int imagePtr, unsigned int xPtr, unsigned int yPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetImageColor(unsigned int outPtr, unsigned int imagePtr, unsigned int xPtr, unsigned int yPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color out = GetImageColor(*image, xPtr, yPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_ImageClearBackground(unsigned int dstPtr, unsigned int colorPtr) {
@@ -2369,30 +2368,30 @@ EMSCRIPTEN_KEEPALIVE void host_ImageDrawTextEx(unsigned int dstPtr, unsigned int
     free((void*)tint);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadTexture(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadTexture(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Texture2D out = LoadTexture(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadTextureFromImage(unsigned int imagePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadTextureFromImage(unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Texture2D out = LoadTextureFromImage(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadTextureCubemap(unsigned int imagePtr, unsigned int layoutPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadTextureCubemap(unsigned int outPtr, unsigned int imagePtr, unsigned int layoutPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     TextureCubemap out = LoadTextureCubemap(*image, layoutPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadRenderTexture(unsigned int widthPtr, unsigned int heightPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadRenderTexture(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr) {
     RenderTexture2D out = LoadRenderTexture(widthPtr, heightPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsTextureValid(unsigned int texturePtr) {
@@ -2531,11 +2530,11 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ColorIsEqual(unsigned int col1Ptr, unsign
     free((void*)col2);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_Fade(unsigned int colorPtr, unsigned int alphaPtr) {
+EMSCRIPTEN_KEEPALIVE void host_Fade(unsigned int outPtr, unsigned int colorPtr, unsigned int alphaPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = Fade(*color, alphaPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_ColorToInt(unsigned int colorPtr) {
@@ -2544,63 +2543,63 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ColorToInt(unsigned int colorPtr) {
     free((void*)color);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorNormalize(unsigned int colorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorNormalize(unsigned int outPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Vector4 out = ColorNormalize(*color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorFromNormalized(unsigned int normalizedPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorFromNormalized(unsigned int outPtr, unsigned int normalizedPtr) {
     Vector4* normalized = cart_get_pointer(normalizedPtr, sizeof(Vector4));
     Color out = ColorFromNormalized(*normalized);
     free((void*)normalized);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorToHSV(unsigned int colorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorToHSV(unsigned int outPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Vector3 out = ColorToHSV(*color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorFromHSV(unsigned int huePtr, unsigned int saturationPtr, unsigned int valuePtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorFromHSV(unsigned int outPtr, unsigned int huePtr, unsigned int saturationPtr, unsigned int valuePtr) {
     Color out = ColorFromHSV(huePtr, saturationPtr, valuePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorTint(unsigned int colorPtr, unsigned int tintPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorTint(unsigned int outPtr, unsigned int colorPtr, unsigned int tintPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
     Color out = ColorTint(*color, *tint);
     free((void*)color);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorBrightness(unsigned int colorPtr, unsigned int factorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorBrightness(unsigned int outPtr, unsigned int colorPtr, unsigned int factorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorBrightness(*color, factorPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorContrast(unsigned int colorPtr, unsigned int contrastPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorContrast(unsigned int outPtr, unsigned int colorPtr, unsigned int contrastPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorContrast(*color, contrastPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorAlpha(unsigned int colorPtr, unsigned int alphaPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorAlpha(unsigned int outPtr, unsigned int colorPtr, unsigned int alphaPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorAlpha(*color, alphaPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorAlphaBlend(unsigned int dstPtr, unsigned int srcPtr, unsigned int tintPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorAlphaBlend(unsigned int outPtr, unsigned int dstPtr, unsigned int srcPtr, unsigned int tintPtr) {
     Color* dst = cart_get_pointer(dstPtr, sizeof(Color));
     Color* src = cart_get_pointer(srcPtr, sizeof(Color));
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
@@ -2608,28 +2607,28 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ColorAlphaBlend(unsigned int dstPtr, unsi
     free((void*)dst);
     free((void*)src);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_ColorLerp(unsigned int color1Ptr, unsigned int color2Ptr, unsigned int factorPtr) {
+EMSCRIPTEN_KEEPALIVE void host_ColorLerp(unsigned int outPtr, unsigned int color1Ptr, unsigned int color2Ptr, unsigned int factorPtr) {
     Color* color1 = cart_get_pointer(color1Ptr, sizeof(Color));
     Color* color2 = cart_get_pointer(color2Ptr, sizeof(Color));
     Color out = ColorLerp(*color1, *color2, factorPtr);
     free((void*)color1);
     free((void*)color2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetColor(unsigned int hexValuePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetColor(unsigned int outPtr, unsigned int hexValuePtr) {
     Color out = GetColor(hexValuePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetPixelColor(unsigned int srcPtrPtr, unsigned int formatPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetPixelColor(unsigned int outPtr, unsigned int srcPtrPtr, unsigned int formatPtr) {
     void ** srcPtr = cart_get_pointer(srcPtrPtr, sizeof(void *));
     Color out = GetPixelColor(srcPtr, formatPtr);
     free((void*)srcPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_SetPixelColor(unsigned int dstPtrPtr, unsigned int colorPtr, unsigned int formatPtr) {
@@ -2644,37 +2643,37 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetPixelDataSize(unsigned int widthPtr, u
     return GetPixelDataSize(widthPtr, heightPtr, formatPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetFontDefault() {
+EMSCRIPTEN_KEEPALIVE void host_GetFontDefault(unsigned int outPtr) {
     Font out = GetFontDefault();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFont(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFont(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Font out = LoadFont(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFontEx(unsigned int fileNamePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFontEx(unsigned int outPtr, unsigned int fileNamePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
     Font out = LoadFontEx(fileName, fontSizePtr, codepoints, codepointCountPtr);
     free((void*)fileName);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFontFromImage(unsigned int imagePtr, unsigned int keyPtr, unsigned int firstCharPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFontFromImage(unsigned int outPtr, unsigned int imagePtr, unsigned int keyPtr, unsigned int firstCharPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color* key = cart_get_pointer(keyPtr, sizeof(Color));
     Font out = LoadFontFromImage(*image, *key, firstCharPtr);
     free((void*)image);
     free((void*)key);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFontFromMemory(unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFontFromMemory(unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
@@ -2682,7 +2681,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFontFromMemory(unsigned int fileTypeP
     free((void*)fileType);
     free((void*)fileData);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsFontValid(unsigned int fontPtr) {
@@ -2691,22 +2690,22 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsFontValid(unsigned int fontPtr) {
     free((void*)font);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadFontData(unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr, unsigned int typePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadFontData(unsigned int outPtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr, unsigned int typePtr) {
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
     GlyphInfo * out = LoadFontData(fileData, dataSizePtr, fontSizePtr, codepoints, codepointCountPtr, typePtr);
     free((void*)fileData);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenImageFontAtlas(unsigned int glyphsPtr, unsigned int glyphRecsPtr, unsigned int glyphCountPtr, unsigned int fontSizePtr, unsigned int paddingPtr, unsigned int packMethodPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenImageFontAtlas(unsigned int outPtr, unsigned int glyphsPtr, unsigned int glyphRecsPtr, unsigned int glyphCountPtr, unsigned int fontSizePtr, unsigned int paddingPtr, unsigned int packMethodPtr) {
     const GlyphInfo ** glyphs = cart_get_pointer(glyphsPtr, sizeof(const GlyphInfo *));
     Rectangle *** glyphRecs = cart_get_pointer(glyphRecsPtr, sizeof(Rectangle **));
     Image out = GenImageFontAtlas(glyphs, glyphRecs, glyphCountPtr, fontSizePtr, paddingPtr, packMethodPtr);
     free((void*)glyphs);
     free((void*)glyphRecs);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadFontData(unsigned int glyphsPtr, unsigned int glyphCountPtr) {
@@ -2799,13 +2798,13 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_MeasureText(unsigned int textPtr, unsigne
     free((void*)text);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_MeasureTextEx(unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr) {
+EMSCRIPTEN_KEEPALIVE void host_MeasureTextEx(unsigned int outPtr, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     const char* text = cart_get_string(textPtr);
     Vector2 out = MeasureTextEx(*font, text, fontSizePtr, spacingPtr);
     free((void*)font);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_GetGlyphIndex(unsigned int fontPtr, unsigned int codepointPtr) {
@@ -2814,25 +2813,25 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetGlyphIndex(unsigned int fontPtr, unsig
     free((void*)font);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetGlyphInfo(unsigned int fontPtr, unsigned int codepointPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetGlyphInfo(unsigned int outPtr, unsigned int fontPtr, unsigned int codepointPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     GlyphInfo out = GetGlyphInfo(*font, codepointPtr);
     free((void*)font);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetGlyphAtlasRec(unsigned int fontPtr, unsigned int codepointPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetGlyphAtlasRec(unsigned int outPtr, unsigned int fontPtr, unsigned int codepointPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     Rectangle out = GetGlyphAtlasRec(*font, codepointPtr);
     free((void*)font);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadUTF8(unsigned int codepointsPtr, unsigned int lengthPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadUTF8(unsigned int outPtr, unsigned int codepointsPtr, unsigned int lengthPtr) {
     const int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(const int *));
     char * out = LoadUTF8(codepoints, lengthPtr);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadUTF8(unsigned int textPtr) {
@@ -2841,13 +2840,13 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadUTF8(unsigned int textPtr) {
     free((void*)text);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadCodepoints(unsigned int textPtr, unsigned int countPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadCodepoints(unsigned int outPtr, unsigned int textPtr, unsigned int countPtr) {
     const char* text = cart_get_string(textPtr);
     int ** count = cart_get_pointer(countPtr, sizeof(int *));
     int * out = LoadCodepoints(text, count);
     free((void*)text);
     free((void*)count);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadCodepoints(unsigned int codepointsPtr) {
@@ -2886,11 +2885,11 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetCodepointPrevious(unsigned int textPtr
     free((void*)codepointSize);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_CodepointToUTF8(unsigned int codepointPtr, unsigned int utf8SizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_CodepointToUTF8(unsigned int outPtr, unsigned int codepointPtr, unsigned int utf8SizePtr) {
     int ** utf8Size = cart_get_pointer(utf8SizePtr, sizeof(int *));
     const char * out = CodepointToUTF8(codepointPtr, utf8Size);
     free((void*)utf8Size);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_TextCopy(unsigned int dstPtr, unsigned int srcPtr) {
@@ -2915,14 +2914,14 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_TextLength(unsigned int textPtr) {
     free((void*)text);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextSubtext(unsigned int textPtr, unsigned int positionPtr, unsigned int lengthPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextSubtext(unsigned int outPtr, unsigned int textPtr, unsigned int positionPtr, unsigned int lengthPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextSubtext(text, positionPtr, lengthPtr);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextReplace(unsigned int textPtr, unsigned int replacePtr, unsigned int byPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextReplace(unsigned int outPtr, unsigned int textPtr, unsigned int replacePtr, unsigned int byPtr) {
     const char* text = cart_get_string(textPtr);
     const char* replace = cart_get_string(replacePtr);
     const char* by = cart_get_string(byPtr);
@@ -2930,34 +2929,34 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_TextReplace(unsigned int textPtr, unsigne
     free((void*)text);
     free((void*)replace);
     free((void*)by);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextInsert(unsigned int textPtr, unsigned int insertPtr, unsigned int positionPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextInsert(unsigned int outPtr, unsigned int textPtr, unsigned int insertPtr, unsigned int positionPtr) {
     const char* text = cart_get_string(textPtr);
     const char* insert = cart_get_string(insertPtr);
     char * out = TextInsert(text, insert, positionPtr);
     free((void*)text);
     free((void*)insert);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextJoin(unsigned int textListPtr, unsigned int countPtr, unsigned int delimiterPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextJoin(unsigned int outPtr, unsigned int textListPtr, unsigned int countPtr, unsigned int delimiterPtr) {
     const char *** textList = cart_get_pointer(textListPtr, sizeof(const char **));
     const char* delimiter = cart_get_string(delimiterPtr);
     const char * out = TextJoin(textList, countPtr, delimiter);
     free((void*)textList);
     free((void*)delimiter);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextSplit(unsigned int textPtr, unsigned int delimiterPtr, unsigned int countPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextSplit(unsigned int outPtr, unsigned int textPtr, unsigned int delimiterPtr, unsigned int countPtr) {
     const char* text = cart_get_string(textPtr);
     int ** count = cart_get_pointer(countPtr, sizeof(int *));
     const char ** out = TextSplit(text, delimiterPtr, count);
     free((void*)text);
     free((void*)count);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_TextAppend(unsigned int textPtr, unsigned int appendPtr, unsigned int positionPtr) {
@@ -2978,39 +2977,39 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_TextFindIndex(unsigned int textPtr, unsig
     free((void*)find);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextToUpper(unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextToUpper(unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToUpper(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextToLower(unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextToLower(unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToLower(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextToPascal(unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextToPascal(unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToPascal(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextToSnake(unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextToSnake(unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToSnake(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_TextToCamel(unsigned int textPtr) {
+EMSCRIPTEN_KEEPALIVE void host_TextToCamel(unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToCamel(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_TextToInteger(unsigned int textPtr) {
@@ -3211,18 +3210,18 @@ EMSCRIPTEN_KEEPALIVE void host_DrawGrid(unsigned int slicesPtr, unsigned int spa
     DrawGrid(slicesPtr, spacingPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadModel(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadModel(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Model out = LoadModel(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadModelFromMesh(unsigned int meshPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadModelFromMesh(unsigned int outPtr, unsigned int meshPtr) {
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     Model out = LoadModelFromMesh(*mesh);
     free((void*)mesh);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsModelValid(unsigned int modelPtr) {
@@ -3237,11 +3236,11 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadModel(unsigned int modelPtr) {
     free((void*)model);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetModelBoundingBox(unsigned int modelPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetModelBoundingBox(unsigned int outPtr, unsigned int modelPtr) {
     Model* model = cart_get_pointer(modelPtr, sizeof(Model));
     BoundingBox out = GetModelBoundingBox(*model);
     free((void*)model);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_DrawModel(unsigned int modelPtr, unsigned int positionPtr, unsigned int scalePtr, unsigned int tintPtr) {
@@ -3412,11 +3411,11 @@ EMSCRIPTEN_KEEPALIVE void host_DrawMeshInstanced(unsigned int meshPtr, unsigned 
     free((void*)transforms);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetMeshBoundingBox(unsigned int meshPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetMeshBoundingBox(unsigned int outPtr, unsigned int meshPtr) {
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     BoundingBox out = GetMeshBoundingBox(*mesh);
     free((void*)mesh);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_GenMeshTangents(unsigned int meshPtr) {
@@ -3441,81 +3440,81 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_ExportMeshAsCode(unsigned int meshPtr, un
     free((void*)fileName);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshPoly(unsigned int sidesPtr, unsigned int radiusPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshPoly(unsigned int outPtr, unsigned int sidesPtr, unsigned int radiusPtr) {
     Mesh out = GenMeshPoly(sidesPtr, radiusPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshPlane(unsigned int widthPtr, unsigned int lengthPtr, unsigned int resXPtr, unsigned int resZPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshPlane(unsigned int outPtr, unsigned int widthPtr, unsigned int lengthPtr, unsigned int resXPtr, unsigned int resZPtr) {
     Mesh out = GenMeshPlane(widthPtr, lengthPtr, resXPtr, resZPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshCube(unsigned int widthPtr, unsigned int heightPtr, unsigned int lengthPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshCube(unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int lengthPtr) {
     Mesh out = GenMeshCube(widthPtr, heightPtr, lengthPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshSphere(unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshSphere(unsigned int outPtr, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshSphere(radiusPtr, ringsPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshHemiSphere(unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshHemiSphere(unsigned int outPtr, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshHemiSphere(radiusPtr, ringsPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshCylinder(unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshCylinder(unsigned int outPtr, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshCylinder(radiusPtr, heightPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshCone(unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshCone(unsigned int outPtr, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshCone(radiusPtr, heightPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshTorus(unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshTorus(unsigned int outPtr, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
     Mesh out = GenMeshTorus(radiusPtr, sizePtr, radSegPtr, sidesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshKnot(unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshKnot(unsigned int outPtr, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
     Mesh out = GenMeshKnot(radiusPtr, sizePtr, radSegPtr, sidesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshHeightmap(unsigned int heightmapPtr, unsigned int sizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshHeightmap(unsigned int outPtr, unsigned int heightmapPtr, unsigned int sizePtr) {
     Image* heightmap = cart_get_pointer(heightmapPtr, sizeof(Image));
     Vector3* size = cart_get_pointer(sizePtr, sizeof(Vector3));
     Mesh out = GenMeshHeightmap(*heightmap, *size);
     free((void*)heightmap);
     free((void*)size);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GenMeshCubicmap(unsigned int cubicmapPtr, unsigned int cubeSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_GenMeshCubicmap(unsigned int outPtr, unsigned int cubicmapPtr, unsigned int cubeSizePtr) {
     Image* cubicmap = cart_get_pointer(cubicmapPtr, sizeof(Image));
     Vector3* cubeSize = cart_get_pointer(cubeSizePtr, sizeof(Vector3));
     Mesh out = GenMeshCubicmap(*cubicmap, *cubeSize);
     free((void*)cubicmap);
     free((void*)cubeSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadMaterials(unsigned int fileNamePtr, unsigned int materialCountPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadMaterials(unsigned int outPtr, unsigned int fileNamePtr, unsigned int materialCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** materialCount = cart_get_pointer(materialCountPtr, sizeof(int *));
     Material * out = LoadMaterials(fileName, materialCount);
     free((void*)fileName);
     free((void*)materialCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadMaterialDefault() {
+EMSCRIPTEN_KEEPALIVE void host_LoadMaterialDefault(unsigned int outPtr) {
     Material out = LoadMaterialDefault();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsMaterialValid(unsigned int materialPtr) {
@@ -3544,13 +3543,13 @@ EMSCRIPTEN_KEEPALIVE void host_SetModelMeshMaterial(unsigned int modelPtr, unsig
     free((void*)model);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadModelAnimations(unsigned int fileNamePtr, unsigned int animCountPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadModelAnimations(unsigned int outPtr, unsigned int fileNamePtr, unsigned int animCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** animCount = cart_get_pointer(animCountPtr, sizeof(int *));
     ModelAnimation * out = LoadModelAnimations(fileName, animCount);
     free((void*)fileName);
     free((void*)animCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UpdateModelAnimation(unsigned int modelPtr, unsigned int animPtr, unsigned int framePtr) {
@@ -3613,25 +3612,25 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_CheckCollisionBoxSphere(unsigned int boxP
     free((void*)center);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionSphere(unsigned int rayPtr, unsigned int centerPtr, unsigned int radiusPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetRayCollisionSphere(unsigned int outPtr, unsigned int rayPtr, unsigned int centerPtr, unsigned int radiusPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* center = cart_get_pointer(centerPtr, sizeof(Vector3));
     RayCollision out = GetRayCollisionSphere(*ray, *center, radiusPtr);
     free((void*)ray);
     free((void*)center);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionBox(unsigned int rayPtr, unsigned int boxPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetRayCollisionBox(unsigned int outPtr, unsigned int rayPtr, unsigned int boxPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     BoundingBox* box = cart_get_pointer(boxPtr, sizeof(BoundingBox));
     RayCollision out = GetRayCollisionBox(*ray, *box);
     free((void*)ray);
     free((void*)box);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionMesh(unsigned int rayPtr, unsigned int meshPtr, unsigned int transformPtr) {
+EMSCRIPTEN_KEEPALIVE void host_GetRayCollisionMesh(unsigned int outPtr, unsigned int rayPtr, unsigned int meshPtr, unsigned int transformPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     Matrix* transform = cart_get_pointer(transformPtr, sizeof(Matrix));
@@ -3639,10 +3638,10 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionMesh(unsigned int rayPtr, 
     free((void*)ray);
     free((void*)mesh);
     free((void*)transform);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionTriangle(unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr) {
+EMSCRIPTEN_KEEPALIVE void host_GetRayCollisionTriangle(unsigned int outPtr, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* p1 = cart_get_pointer(p1Ptr, sizeof(Vector3));
     Vector3* p2 = cart_get_pointer(p2Ptr, sizeof(Vector3));
@@ -3652,10 +3651,10 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionTriangle(unsigned int rayP
     free((void*)p1);
     free((void*)p2);
     free((void*)p3);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionQuad(unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr) {
+EMSCRIPTEN_KEEPALIVE void host_GetRayCollisionQuad(unsigned int outPtr, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* p1 = cart_get_pointer(p1Ptr, sizeof(Vector3));
     Vector3* p2 = cart_get_pointer(p2Ptr, sizeof(Vector3));
@@ -3667,7 +3666,7 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetRayCollisionQuad(unsigned int rayPtr, 
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_InitAudioDevice() {
@@ -3690,20 +3689,20 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetMasterVolume() {
     return GetMasterVolume();
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadWave(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadWave(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Wave out = LoadWave(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadWaveFromMemory(unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadWaveFromMemory(unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     Wave out = LoadWaveFromMemory(fileType, fileData, dataSizePtr);
     free((void*)fileType);
     free((void*)fileData);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsWaveValid(unsigned int wavePtr) {
@@ -3712,25 +3711,25 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_IsWaveValid(unsigned int wavePtr) {
     free((void*)wave);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadSound(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadSound(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Sound out = LoadSound(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadSoundFromWave(unsigned int wavePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadSoundFromWave(unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     Sound out = LoadSoundFromWave(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadSoundAlias(unsigned int sourcePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadSoundAlias(unsigned int outPtr, unsigned int sourcePtr) {
     Sound* source = cart_get_pointer(sourcePtr, sizeof(Sound));
     Sound out = LoadSoundAlias(*source);
     free((void*)source);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsSoundValid(unsigned int soundPtr) {
@@ -3829,11 +3828,11 @@ EMSCRIPTEN_KEEPALIVE void host_SetSoundPan(unsigned int soundPtr, unsigned int p
     free((void*)sound);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_WaveCopy(unsigned int wavePtr) {
+EMSCRIPTEN_KEEPALIVE void host_WaveCopy(unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     Wave out = WaveCopy(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_WaveCrop(unsigned int wavePtr, unsigned int initFramePtr, unsigned int finalFramePtr) {
@@ -3848,11 +3847,11 @@ EMSCRIPTEN_KEEPALIVE void host_WaveFormat(unsigned int wavePtr, unsigned int sam
     free((void*)wave);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadWaveSamples(unsigned int wavePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadWaveSamples(unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     float * out = LoadWaveSamples(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE void host_UnloadWaveSamples(unsigned int samplesPtr) {
@@ -3861,20 +3860,20 @@ EMSCRIPTEN_KEEPALIVE void host_UnloadWaveSamples(unsigned int samplesPtr) {
     free((void*)samples);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadMusicStream(unsigned int fileNamePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadMusicStream(unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Music out = LoadMusicStream(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadMusicStreamFromMemory(unsigned int fileTypePtr, unsigned int dataPtr, unsigned int dataSizePtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadMusicStreamFromMemory(unsigned int outPtr, unsigned int fileTypePtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     Music out = LoadMusicStreamFromMemory(fileType, data, dataSizePtr);
     free((void*)fileType);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsMusicValid(unsigned int musicPtr) {
@@ -3961,9 +3960,9 @@ EMSCRIPTEN_KEEPALIVE unsigned int host_GetMusicTimePlayed(unsigned int musicPtr)
     free((void*)music);
 }
 
-EMSCRIPTEN_KEEPALIVE unsigned int host_LoadAudioStream(unsigned int sampleRatePtr, unsigned int sampleSizePtr, unsigned int channelsPtr) {
+EMSCRIPTEN_KEEPALIVE void host_LoadAudioStream(unsigned int outPtr, unsigned int sampleRatePtr, unsigned int sampleSizePtr, unsigned int channelsPtr) {
     AudioStream out = LoadAudioStream(sampleRatePtr, sampleSizePtr, channelsPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 EMSCRIPTEN_KEEPALIVE unsigned int host_IsAudioStreamValid(unsigned int streamPtr) {

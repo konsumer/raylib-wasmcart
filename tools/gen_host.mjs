@@ -10,6 +10,18 @@ const skippedFunctions = [
   'GetClipboardImage'
 ]
 
+// for these, use FS variants (to use physfs)
+const fsFunctions = [
+  'FileExists',
+  'DirectoryExists',
+  'GetFileLength',
+  'ChangeDirectory',
+  'IsPathFile',
+  'LoadDirectoryFiles',
+  'LoadDirectoryFilesEx',
+  'GetFileModTime',
+]
+
 // Helper to determine if a type needs pointer handling
 function needsPointerHandling(type) {
   return type.includes('*') || type[0] === type[0].toUpperCase()
@@ -52,22 +64,29 @@ function generateReturnHandling(func, returnVal) {
   return `    return ${returnVal};`
 }
 
-function generateFunctionSignature(func, isWamr = false) {
-  const returnType = func.returnType === 'void' ? 'void' : 'unsigned int'
-  const wamrParam = isWamr ? 'wasm_exec_env_t exec_env, ' : ''
-
-  const params = (func.params || [])
-    .map((param) => {
-      // For numbers and booleans, pass the value directly
-      return `unsigned int ${param.name}Ptr`
-    })
-    .join(', ')
-
-  return `${returnType} host_${func.name}(${wamrParam}${params})`
+function isSimpleType(type) {
+  return ['bool', 'int', 'float', 'double', 'unsigned int', 'long'].includes(type)
 }
 
-function isSimpleType(type) {
-  return ['bool', 'int', 'float', 'double', 'unsigned int'].includes(type)
+function generateFunctionSignature(func, isWamr = false) {
+  // Always void when returning structs, as we'll use an output parameter
+  const returnType = func.returnType === 'void' || needsPointerHandling(func.returnType)
+    ? 'void'
+    : 'unsigned int'
+  const wamrParam = isWamr ? 'wasm_exec_env_t exec_env, ' : ''
+
+  let params = []
+
+  // Add output parameter for struct returns
+  if (needsPointerHandling(func.returnType) && func.returnType !== 'void') {
+    params.push(`unsigned int outPtr`)
+  }
+
+  // Add regular parameters
+  params = params.concat((func.params || [])
+    .map((param) => `unsigned int ${param.name}Ptr`))
+
+  return `${returnType} host_${func.name}(${wamrParam}${params.join(', ')})`
 }
 
 function generateFunctionBody(func) {
@@ -84,14 +103,16 @@ function generateFunctionBody(func) {
   // Generate function call
   const paramList = func.params.map((p) => generateParamUsage(p)).join(', ')
 
+  const fname = fsFunctions.includes(func.name) ? `${func.name}FS` : func.name
+
   if (func.returnType === 'void') {
     body += `    ${func.name}(${paramList});\n`
   } else if (isSimpleType(func.returnType)) {
     // For simple types, return directly
-    body += `    return ${func.name}(${paramList});\n`
+    body += `    return ${fname}(${paramList});\n`
   } else {
-    // For complex types that need pointer handling
-    body += `    ${func.returnType} out = ${func.name}(${paramList});\n`
+    // For struct returns, use output parameter
+    body += `    ${func.returnType} out = ${fname}(${paramList});\n`
   }
 
   // Cleanup
@@ -103,8 +124,12 @@ function generateFunctionBody(func) {
   })
 
   // Return handling for complex types
-  if (func.returnType !== 'void' && !isSimpleType(func.returnType)) {
-    body += generateReturnHandling(func, 'out') + '\n'
+  if (func.returnType !== 'void') {
+    if (isSimpleType(func.returnType)) {
+      // Already handled above
+    } else {
+      body += `    cart_set_pointer(&out, sizeof(out), outPtr);\n`
+    }
   }
 
   return body
@@ -144,6 +169,8 @@ for (const f of Object.values(api.functions)) {
     f.params = []
   }
 }
+
+
 
 await writeFile('host/src/null0_host_emscripten.h', (await readFile('tools/gen_host_emscripten_header.h', 'utf8')) + generateEmscriptenHeader(api.functions) + (await readFile('tools/gen_host_emscripten_footer.h', 'utf8')))
 

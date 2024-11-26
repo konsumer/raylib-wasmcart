@@ -21,6 +21,8 @@ void update(double time);
 NULL0_EXPORT("unload")
 void unload();
 
+#define RLAPI
+
 /**********************************************************************************************
 *
 *   raylib v5.5 - A simple and easy-to-use library to enjoy videogames programming (www.raylib.com)

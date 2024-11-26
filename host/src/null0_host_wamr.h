@@ -22,9 +22,10 @@ void* cart_get_pointer(unsigned int cartPtr, unsigned int len) {
   return hostPtr;
 }
 
-unsigned int cart_set_pointer(void* hostPtr, unsigned int len) {
-  unsigned int cartPtr = wasm_runtime_malloc(module_inst, len);
-  if (!cartPtr) return 0;
+unsigned int cart_set_pointer(void* hostPtr, unsigned int len, unsigned int cartPtr) {
+  if (cartPtr == 0) {
+    cartPtr = wasm_runtime_malloc(module_inst, len);
+  }
 
   void* wasmPtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
   if (!wasmPtr) {
@@ -192,9 +193,9 @@ void host_SetWindowFocused(wasm_exec_env_t exec_env, ) {
     SetWindowFocused();
 }
 
-unsigned int host_GetWindowHandle(wasm_exec_env_t exec_env, ) {
+void host_GetWindowHandle(wasm_exec_env_t exec_env, unsigned int outPtr) {
     void * out = GetWindowHandle();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetScreenWidth(wasm_exec_env_t exec_env, ) {
@@ -221,9 +222,9 @@ unsigned int host_GetCurrentMonitor(wasm_exec_env_t exec_env, ) {
     return GetCurrentMonitor();
 }
 
-unsigned int host_GetMonitorPosition(wasm_exec_env_t exec_env, unsigned int monitorPtr) {
+void host_GetMonitorPosition(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int monitorPtr) {
     Vector2 out = GetMonitorPosition(monitorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetMonitorWidth(wasm_exec_env_t exec_env, unsigned int monitorPtr) {
@@ -246,19 +247,19 @@ unsigned int host_GetMonitorRefreshRate(wasm_exec_env_t exec_env, unsigned int m
     return GetMonitorRefreshRate(monitorPtr);
 }
 
-unsigned int host_GetWindowPosition(wasm_exec_env_t exec_env, ) {
+void host_GetWindowPosition(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetWindowPosition();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetWindowScaleDPI(wasm_exec_env_t exec_env, ) {
+void host_GetWindowScaleDPI(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetWindowScaleDPI();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetMonitorName(wasm_exec_env_t exec_env, unsigned int monitorPtr) {
+void host_GetMonitorName(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int monitorPtr) {
     const char * out = GetMonitorName(monitorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_SetClipboardText(wasm_exec_env_t exec_env, unsigned int textPtr) {
@@ -267,14 +268,14 @@ void host_SetClipboardText(wasm_exec_env_t exec_env, unsigned int textPtr) {
     free((void*)text);
 }
 
-unsigned int host_GetClipboardText(wasm_exec_env_t exec_env, ) {
+void host_GetClipboardText(wasm_exec_env_t exec_env, unsigned int outPtr) {
     const char * out = GetClipboardText();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetClipboardImage(wasm_exec_env_t exec_env, ) {
+void host_GetClipboardImage(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Image out = GetClipboardImage();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_EnableEventWaiting(wasm_exec_env_t exec_env, ) {
@@ -389,11 +390,11 @@ void host_EndVrStereoMode(wasm_exec_env_t exec_env, ) {
     EndVrStereoMode();
 }
 
-unsigned int host_LoadVrStereoConfig(wasm_exec_env_t exec_env, unsigned int devicePtr) {
+void host_LoadVrStereoConfig(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int devicePtr) {
     VrDeviceInfo* device = cart_get_pointer(devicePtr, sizeof(VrDeviceInfo));
     VrStereoConfig out = LoadVrStereoConfig(*device);
     free((void*)device);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadVrStereoConfig(wasm_exec_env_t exec_env, unsigned int configPtr) {
@@ -402,22 +403,22 @@ void host_UnloadVrStereoConfig(wasm_exec_env_t exec_env, unsigned int configPtr)
     free((void*)config);
 }
 
-unsigned int host_LoadShader(wasm_exec_env_t exec_env, unsigned int vsFileNamePtr, unsigned int fsFileNamePtr) {
+void host_LoadShader(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int vsFileNamePtr, unsigned int fsFileNamePtr) {
     const char* vsFileName = cart_get_string(vsFileNamePtr);
     const char* fsFileName = cart_get_string(fsFileNamePtr);
     Shader out = LoadShader(vsFileName, fsFileName);
     free((void*)vsFileName);
     free((void*)fsFileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadShaderFromMemory(wasm_exec_env_t exec_env, unsigned int vsCodePtr, unsigned int fsCodePtr) {
+void host_LoadShaderFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int vsCodePtr, unsigned int fsCodePtr) {
     const char* vsCode = cart_get_string(vsCodePtr);
     const char* fsCode = cart_get_string(fsCodePtr);
     Shader out = LoadShaderFromMemory(vsCode, fsCode);
     free((void*)vsCode);
     free((void*)fsCode);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsShaderValid(wasm_exec_env_t exec_env, unsigned int shaderPtr) {
@@ -480,72 +481,72 @@ void host_UnloadShader(wasm_exec_env_t exec_env, unsigned int shaderPtr) {
     free((void*)shader);
 }
 
-unsigned int host_GetScreenToWorldRay(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr) {
+void host_GetScreenToWorldRay(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Ray out = GetScreenToWorldRay(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetScreenToWorldRayEx(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
+void host_GetScreenToWorldRayEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Ray out = GetScreenToWorldRayEx(*position, *camera, widthPtr, heightPtr);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetWorldToScreen(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr) {
+void host_GetWorldToScreen(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector3* position = cart_get_pointer(positionPtr, sizeof(Vector3));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Vector2 out = GetWorldToScreen(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetWorldToScreenEx(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
+void host_GetWorldToScreenEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr, unsigned int widthPtr, unsigned int heightPtr) {
     Vector3* position = cart_get_pointer(positionPtr, sizeof(Vector3));
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Vector2 out = GetWorldToScreenEx(*position, *camera, widthPtr, heightPtr);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetWorldToScreen2D(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr) {
+void host_GetWorldToScreen2D(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Vector2 out = GetWorldToScreen2D(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetScreenToWorld2D(wasm_exec_env_t exec_env, unsigned int positionPtr, unsigned int cameraPtr) {
+void host_GetScreenToWorld2D(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int positionPtr, unsigned int cameraPtr) {
     Vector2* position = cart_get_pointer(positionPtr, sizeof(Vector2));
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Vector2 out = GetScreenToWorld2D(*position, *camera);
     free((void*)position);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetCameraMatrix(wasm_exec_env_t exec_env, unsigned int cameraPtr) {
+void host_GetCameraMatrix(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int cameraPtr) {
     Camera* camera = cart_get_pointer(cameraPtr, sizeof(Camera));
     Matrix out = GetCameraMatrix(*camera);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetCameraMatrix2D(wasm_exec_env_t exec_env, unsigned int cameraPtr) {
+void host_GetCameraMatrix2D(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int cameraPtr) {
     Camera2D* camera = cart_get_pointer(cameraPtr, sizeof(Camera2D));
     Matrix out = GetCameraMatrix2D(*camera);
     free((void*)camera);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_SetTargetFPS(wasm_exec_env_t exec_env, unsigned int fpsPtr) {
@@ -584,9 +585,9 @@ unsigned int host_GetRandomValue(wasm_exec_env_t exec_env, unsigned int minPtr, 
     return GetRandomValue(minPtr, maxPtr);
 }
 
-unsigned int host_LoadRandomSequence(wasm_exec_env_t exec_env, unsigned int countPtr, unsigned int minPtr, unsigned int maxPtr) {
+void host_LoadRandomSequence(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int countPtr, unsigned int minPtr, unsigned int maxPtr) {
     int * out = LoadRandomSequence(countPtr, minPtr, maxPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadRandomSequence(wasm_exec_env_t exec_env, unsigned int sequencePtr) {
@@ -623,16 +624,16 @@ void host_SetTraceLogLevel(wasm_exec_env_t exec_env, unsigned int logLevelPtr) {
     SetTraceLogLevel(logLevelPtr);
 }
 
-unsigned int host_MemAlloc(wasm_exec_env_t exec_env, unsigned int sizePtr) {
+void host_MemAlloc(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int sizePtr) {
     void * out = MemAlloc(sizePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_MemRealloc(wasm_exec_env_t exec_env, unsigned int ptrPtr, unsigned int sizePtr) {
+void host_MemRealloc(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int ptrPtr, unsigned int sizePtr) {
     void ** ptr = cart_get_pointer(ptrPtr, sizeof(void *));
     void * out = MemRealloc(ptr, sizePtr);
     free((void*)ptr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_MemFree(wasm_exec_env_t exec_env, unsigned int ptrPtr) {
@@ -671,13 +672,13 @@ void host_SetSaveFileTextCallback(wasm_exec_env_t exec_env, unsigned int callbac
     free((void*)callback);
 }
 
-unsigned int host_LoadFileData(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int dataSizePtr) {
+void host_LoadFileData(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int dataSizePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** dataSize = cart_get_pointer(dataSizePtr, sizeof(int *));
     unsigned char * out = LoadFileData(fileName, dataSize);
     free((void*)fileName);
     free((void*)dataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadFileData(wasm_exec_env_t exec_env, unsigned int dataPtr) {
@@ -702,11 +703,11 @@ unsigned int host_ExportDataAsCode(wasm_exec_env_t exec_env, unsigned int dataPt
     free((void*)fileName);
 }
 
-unsigned int host_LoadFileText(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadFileText(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     char * out = LoadFileText(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadFileText(wasm_exec_env_t exec_env, unsigned int textPtr) {
@@ -725,13 +726,13 @@ unsigned int host_SaveFileText(wasm_exec_env_t exec_env, unsigned int fileNamePt
 
 unsigned int host_FileExists(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    return FileExists(fileName);
+    return FileExistsFS(fileName);
     free((void*)fileName);
 }
 
 unsigned int host_DirectoryExists(wasm_exec_env_t exec_env, unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
-    return DirectoryExists(dirPath);
+    return DirectoryExistsFS(dirPath);
     free((void*)dirPath);
 }
 
@@ -745,53 +746,53 @@ unsigned int host_IsFileExtension(wasm_exec_env_t exec_env, unsigned int fileNam
 
 unsigned int host_GetFileLength(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    return GetFileLength(fileName);
+    return GetFileLengthFS(fileName);
     free((void*)fileName);
 }
 
-unsigned int host_GetFileExtension(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_GetFileExtension(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     const char * out = GetFileExtension(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetFileName(wasm_exec_env_t exec_env, unsigned int filePathPtr) {
+void host_GetFileName(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetFileName(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetFileNameWithoutExt(wasm_exec_env_t exec_env, unsigned int filePathPtr) {
+void host_GetFileNameWithoutExt(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetFileNameWithoutExt(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetDirectoryPath(wasm_exec_env_t exec_env, unsigned int filePathPtr) {
+void host_GetDirectoryPath(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int filePathPtr) {
     const char* filePath = cart_get_string(filePathPtr);
     const char * out = GetDirectoryPath(filePath);
     free((void*)filePath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetPrevDirectoryPath(wasm_exec_env_t exec_env, unsigned int dirPathPtr) {
+void host_GetPrevDirectoryPath(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
     const char * out = GetPrevDirectoryPath(dirPath);
     free((void*)dirPath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetWorkingDirectory(wasm_exec_env_t exec_env, ) {
+void host_GetWorkingDirectory(wasm_exec_env_t exec_env, unsigned int outPtr) {
     const char * out = GetWorkingDirectory();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetApplicationDirectory(wasm_exec_env_t exec_env, ) {
+void host_GetApplicationDirectory(wasm_exec_env_t exec_env, unsigned int outPtr) {
     const char * out = GetApplicationDirectory();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_MakeDirectory(wasm_exec_env_t exec_env, unsigned int dirPathPtr) {
@@ -802,13 +803,13 @@ unsigned int host_MakeDirectory(wasm_exec_env_t exec_env, unsigned int dirPathPt
 
 unsigned int host_ChangeDirectory(wasm_exec_env_t exec_env, unsigned int dirPtr) {
     const char* dir = cart_get_string(dirPtr);
-    return ChangeDirectory(dir);
+    return ChangeDirectoryFS(dir);
     free((void*)dir);
 }
 
 unsigned int host_IsPathFile(wasm_exec_env_t exec_env, unsigned int pathPtr) {
     const char* path = cart_get_string(pathPtr);
-    return IsPathFile(path);
+    return IsPathFileFS(path);
     free((void*)path);
 }
 
@@ -818,20 +819,20 @@ unsigned int host_IsFileNameValid(wasm_exec_env_t exec_env, unsigned int fileNam
     free((void*)fileName);
 }
 
-unsigned int host_LoadDirectoryFiles(wasm_exec_env_t exec_env, unsigned int dirPathPtr) {
+void host_LoadDirectoryFiles(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dirPathPtr) {
     const char* dirPath = cart_get_string(dirPathPtr);
-    FilePathList out = LoadDirectoryFiles(dirPath);
+    FilePathList out = LoadDirectoryFilesFS(dirPath);
     free((void*)dirPath);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadDirectoryFilesEx(wasm_exec_env_t exec_env, unsigned int basePathPtr, unsigned int filterPtr, unsigned int scanSubdirsPtr) {
+void host_LoadDirectoryFilesEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int basePathPtr, unsigned int filterPtr, unsigned int scanSubdirsPtr) {
     const char* basePath = cart_get_string(basePathPtr);
     const char* filter = cart_get_string(filterPtr);
-    FilePathList out = LoadDirectoryFilesEx(basePath, filter, scanSubdirsPtr);
+    FilePathList out = LoadDirectoryFilesExFS(basePath, filter, scanSubdirsPtr);
     free((void*)basePath);
     free((void*)filter);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadDirectoryFiles(wasm_exec_env_t exec_env, unsigned int filesPtr) {
@@ -844,9 +845,9 @@ unsigned int host_IsFileDropped(wasm_exec_env_t exec_env, ) {
     return IsFileDropped();
 }
 
-unsigned int host_LoadDroppedFiles(wasm_exec_env_t exec_env, ) {
+void host_LoadDroppedFiles(wasm_exec_env_t exec_env, unsigned int outPtr) {
     FilePathList out = LoadDroppedFiles();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadDroppedFiles(wasm_exec_env_t exec_env, unsigned int filesPtr) {
@@ -857,45 +858,44 @@ void host_UnloadDroppedFiles(wasm_exec_env_t exec_env, unsigned int filesPtr) {
 
 unsigned int host_GetFileModTime(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    long out = GetFileModTime(fileName);
+    return GetFileModTimeFS(fileName);
     free((void*)fileName);
-    return out;
 }
 
-unsigned int host_CompressData(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int compDataSizePtr) {
+void host_CompressData(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int compDataSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** compDataSize = cart_get_pointer(compDataSizePtr, sizeof(int *));
     unsigned char * out = CompressData(data, dataSizePtr, compDataSize);
     free((void*)data);
     free((void*)compDataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_DecompressData(wasm_exec_env_t exec_env, unsigned int compDataPtr, unsigned int compDataSizePtr, unsigned int dataSizePtr) {
+void host_DecompressData(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int compDataPtr, unsigned int compDataSizePtr, unsigned int dataSizePtr) {
     const unsigned char ** compData = cart_get_pointer(compDataPtr, sizeof(const unsigned char *));
     int ** dataSize = cart_get_pointer(dataSizePtr, sizeof(int *));
     unsigned char * out = DecompressData(compData, compDataSizePtr, dataSize);
     free((void*)compData);
     free((void*)dataSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_EncodeDataBase64(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int outputSizePtr) {
+void host_EncodeDataBase64(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr, unsigned int outputSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** outputSize = cart_get_pointer(outputSizePtr, sizeof(int *));
     char * out = EncodeDataBase64(data, dataSizePtr, outputSize);
     free((void*)data);
     free((void*)outputSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_DecodeDataBase64(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int outputSizePtr) {
+void host_DecodeDataBase64(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dataPtr, unsigned int outputSizePtr) {
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     int ** outputSize = cart_get_pointer(outputSizePtr, sizeof(int *));
     unsigned char * out = DecodeDataBase64(data, outputSize);
     free((void*)data);
     free((void*)outputSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_ComputeCRC32(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int dataSizePtr) {
@@ -904,25 +904,25 @@ unsigned int host_ComputeCRC32(wasm_exec_env_t exec_env, unsigned int dataPtr, u
     free((void*)data);
 }
 
-unsigned int host_ComputeMD5(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int dataSizePtr) {
+void host_ComputeMD5(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     unsigned char ** data = cart_get_pointer(dataPtr, sizeof(unsigned char *));
     unsigned int * out = ComputeMD5(data, dataSizePtr);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ComputeSHA1(wasm_exec_env_t exec_env, unsigned int dataPtr, unsigned int dataSizePtr) {
+void host_ComputeSHA1(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     unsigned char ** data = cart_get_pointer(dataPtr, sizeof(unsigned char *));
     unsigned int * out = ComputeSHA1(data, dataSizePtr);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadAutomationEventList(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadAutomationEventList(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     AutomationEventList out = LoadAutomationEventList(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadAutomationEventList(wasm_exec_env_t exec_env, unsigned int listPtr) {
@@ -999,9 +999,9 @@ unsigned int host_IsGamepadAvailable(wasm_exec_env_t exec_env, unsigned int game
     return IsGamepadAvailable(gamepadPtr);
 }
 
-unsigned int host_GetGamepadName(wasm_exec_env_t exec_env, unsigned int gamepadPtr) {
+void host_GetGamepadName(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int gamepadPtr) {
     const char * out = GetGamepadName(gamepadPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsGamepadButtonPressed(wasm_exec_env_t exec_env, unsigned int gamepadPtr, unsigned int buttonPtr) {
@@ -1066,14 +1066,14 @@ unsigned int host_GetMouseY(wasm_exec_env_t exec_env, ) {
     return GetMouseY();
 }
 
-unsigned int host_GetMousePosition(wasm_exec_env_t exec_env, ) {
+void host_GetMousePosition(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetMousePosition();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetMouseDelta(wasm_exec_env_t exec_env, ) {
+void host_GetMouseDelta(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetMouseDelta();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_SetMousePosition(wasm_exec_env_t exec_env, unsigned int xPtr, unsigned int yPtr) {
@@ -1092,9 +1092,9 @@ unsigned int host_GetMouseWheelMove(wasm_exec_env_t exec_env, ) {
     return GetMouseWheelMove();
 }
 
-unsigned int host_GetMouseWheelMoveV(wasm_exec_env_t exec_env, ) {
+void host_GetMouseWheelMoveV(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetMouseWheelMoveV();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_SetMouseCursor(wasm_exec_env_t exec_env, unsigned int cursorPtr) {
@@ -1109,9 +1109,9 @@ unsigned int host_GetTouchY(wasm_exec_env_t exec_env, ) {
     return GetTouchY();
 }
 
-unsigned int host_GetTouchPosition(wasm_exec_env_t exec_env, unsigned int indexPtr) {
+void host_GetTouchPosition(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int indexPtr) {
     Vector2 out = GetTouchPosition(indexPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetTouchPointId(wasm_exec_env_t exec_env, unsigned int indexPtr) {
@@ -1138,18 +1138,18 @@ unsigned int host_GetGestureHoldDuration(wasm_exec_env_t exec_env, ) {
     return GetGestureHoldDuration();
 }
 
-unsigned int host_GetGestureDragVector(wasm_exec_env_t exec_env, ) {
+void host_GetGestureDragVector(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetGestureDragVector();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetGestureDragAngle(wasm_exec_env_t exec_env, ) {
     return GetGestureDragAngle();
 }
 
-unsigned int host_GetGesturePinchVector(wasm_exec_env_t exec_env, ) {
+void host_GetGesturePinchVector(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Vector2 out = GetGesturePinchVector();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetGesturePinchAngle(wasm_exec_env_t exec_env, ) {
@@ -1180,14 +1180,14 @@ void host_SetShapesTexture(wasm_exec_env_t exec_env, unsigned int texturePtr, un
     free((void*)source);
 }
 
-unsigned int host_GetShapesTexture(wasm_exec_env_t exec_env, ) {
+void host_GetShapesTexture(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Texture2D out = GetShapesTexture();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetShapesTextureRectangle(wasm_exec_env_t exec_env, ) {
+void host_GetShapesTextureRectangle(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Rectangle out = GetShapesTextureRectangle();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_DrawPixel(wasm_exec_env_t exec_env, unsigned int posXPtr, unsigned int posYPtr, unsigned int colorPtr) {
@@ -1598,16 +1598,16 @@ void host_DrawSplineSegmentBezierCubic(wasm_exec_env_t exec_env, unsigned int p1
     free((void*)color);
 }
 
-unsigned int host_GetSplinePointLinear(wasm_exec_env_t exec_env, unsigned int startPosPtr, unsigned int endPosPtr, unsigned int tPtr) {
+void host_GetSplinePointLinear(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int startPosPtr, unsigned int endPosPtr, unsigned int tPtr) {
     Vector2* startPos = cart_get_pointer(startPosPtr, sizeof(Vector2));
     Vector2* endPos = cart_get_pointer(endPosPtr, sizeof(Vector2));
     Vector2 out = GetSplinePointLinear(*startPos, *endPos, tPtr);
     free((void*)startPos);
     free((void*)endPos);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetSplinePointBasis(wasm_exec_env_t exec_env, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+void host_GetSplinePointBasis(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* p2 = cart_get_pointer(p2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1617,10 +1617,10 @@ unsigned int host_GetSplinePointBasis(wasm_exec_env_t exec_env, unsigned int p1P
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetSplinePointCatmullRom(wasm_exec_env_t exec_env, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+void host_GetSplinePointCatmullRom(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* p2 = cart_get_pointer(p2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1630,10 +1630,10 @@ unsigned int host_GetSplinePointCatmullRom(wasm_exec_env_t exec_env, unsigned in
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetSplinePointBezierQuad(wasm_exec_env_t exec_env, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int p3Ptr, unsigned int tPtr) {
+void host_GetSplinePointBezierQuad(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int p3Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* c2 = cart_get_pointer(c2Ptr, sizeof(Vector2));
     Vector2* p3 = cart_get_pointer(p3Ptr, sizeof(Vector2));
@@ -1641,10 +1641,10 @@ unsigned int host_GetSplinePointBezierQuad(wasm_exec_env_t exec_env, unsigned in
     free((void*)p1);
     free((void*)c2);
     free((void*)p3);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetSplinePointBezierCubic(wasm_exec_env_t exec_env, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int c3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
+void host_GetSplinePointBezierCubic(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int p1Ptr, unsigned int c2Ptr, unsigned int c3Ptr, unsigned int p4Ptr, unsigned int tPtr) {
     Vector2* p1 = cart_get_pointer(p1Ptr, sizeof(Vector2));
     Vector2* c2 = cart_get_pointer(c2Ptr, sizeof(Vector2));
     Vector2* c3 = cart_get_pointer(c3Ptr, sizeof(Vector2));
@@ -1654,7 +1654,7 @@ unsigned int host_GetSplinePointBezierCubic(wasm_exec_env_t exec_env, unsigned i
     free((void*)c2);
     free((void*)c3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_CheckCollisionRecs(wasm_exec_env_t exec_env, unsigned int rec1Ptr, unsigned int rec2Ptr) {
@@ -1751,39 +1751,39 @@ unsigned int host_CheckCollisionLines(wasm_exec_env_t exec_env, unsigned int sta
     free((void*)collisionPoint);
 }
 
-unsigned int host_GetCollisionRec(wasm_exec_env_t exec_env, unsigned int rec1Ptr, unsigned int rec2Ptr) {
+void host_GetCollisionRec(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rec1Ptr, unsigned int rec2Ptr) {
     Rectangle* rec1 = cart_get_pointer(rec1Ptr, sizeof(Rectangle));
     Rectangle* rec2 = cart_get_pointer(rec2Ptr, sizeof(Rectangle));
     Rectangle out = GetCollisionRec(*rec1, *rec2);
     free((void*)rec1);
     free((void*)rec2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImage(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Image out = LoadImage(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageRaw(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int formatPtr, unsigned int headerSizePtr) {
+void host_LoadImageRaw(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int formatPtr, unsigned int headerSizePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Image out = LoadImageRaw(fileName, widthPtr, heightPtr, formatPtr, headerSizePtr);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageAnim(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int framesPtr) {
+void host_LoadImageAnim(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int framesPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** frames = cart_get_pointer(framesPtr, sizeof(int *));
     Image out = LoadImageAnim(fileName, frames);
     free((void*)fileName);
     free((void*)frames);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageAnimFromMemory(wasm_exec_env_t exec_env, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int framesPtr) {
+void host_LoadImageAnimFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int framesPtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** frames = cart_get_pointer(framesPtr, sizeof(int *));
@@ -1791,28 +1791,28 @@ unsigned int host_LoadImageAnimFromMemory(wasm_exec_env_t exec_env, unsigned int
     free((void*)fileType);
     free((void*)fileData);
     free((void*)frames);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageFromMemory(wasm_exec_env_t exec_env, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
+void host_LoadImageFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     Image out = LoadImageFromMemory(fileType, fileData, dataSizePtr);
     free((void*)fileType);
     free((void*)fileData);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageFromTexture(wasm_exec_env_t exec_env, unsigned int texturePtr) {
+void host_LoadImageFromTexture(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int texturePtr) {
     Texture2D* texture = cart_get_pointer(texturePtr, sizeof(Texture2D));
     Image out = LoadImageFromTexture(*texture);
     free((void*)texture);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImageFromScreen(wasm_exec_env_t exec_env, ) {
+void host_LoadImageFromScreen(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Image out = LoadImageFromScreen();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsImageValid(wasm_exec_env_t exec_env, unsigned int imagePtr) {
@@ -1835,7 +1835,7 @@ unsigned int host_ExportImage(wasm_exec_env_t exec_env, unsigned int imagePtr, u
     free((void*)fileName);
 }
 
-unsigned int host_ExportImageToMemory(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int fileTypePtr, unsigned int fileSizePtr) {
+void host_ExportImageToMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int fileTypePtr, unsigned int fileSizePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     const char* fileType = cart_get_string(fileTypePtr);
     int ** fileSize = cart_get_pointer(fileSizePtr, sizeof(int *));
@@ -1843,7 +1843,7 @@ unsigned int host_ExportImageToMemory(wasm_exec_env_t exec_env, unsigned int ima
     free((void*)image);
     free((void*)fileType);
     free((void*)fileSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_ExportImageAsCode(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int fileNamePtr) {
@@ -1854,104 +1854,104 @@ unsigned int host_ExportImageAsCode(wasm_exec_env_t exec_env, unsigned int image
     free((void*)fileName);
 }
 
-unsigned int host_GenImageColor(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int colorPtr) {
+void host_GenImageColor(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Image out = GenImageColor(widthPtr, heightPtr, *color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageGradientLinear(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int directionPtr, unsigned int startPtr, unsigned int endPtr) {
+void host_GenImageGradientLinear(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int directionPtr, unsigned int startPtr, unsigned int endPtr) {
     Color* start = cart_get_pointer(startPtr, sizeof(Color));
     Color* end = cart_get_pointer(endPtr, sizeof(Color));
     Image out = GenImageGradientLinear(widthPtr, heightPtr, directionPtr, *start, *end);
     free((void*)start);
     free((void*)end);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageGradientRadial(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
+void host_GenImageGradientRadial(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
     Color* inner = cart_get_pointer(innerPtr, sizeof(Color));
     Color* outer = cart_get_pointer(outerPtr, sizeof(Color));
     Image out = GenImageGradientRadial(widthPtr, heightPtr, densityPtr, *inner, *outer);
     free((void*)inner);
     free((void*)outer);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageGradientSquare(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
+void host_GenImageGradientSquare(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int densityPtr, unsigned int innerPtr, unsigned int outerPtr) {
     Color* inner = cart_get_pointer(innerPtr, sizeof(Color));
     Color* outer = cart_get_pointer(outerPtr, sizeof(Color));
     Image out = GenImageGradientSquare(widthPtr, heightPtr, densityPtr, *inner, *outer);
     free((void*)inner);
     free((void*)outer);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageChecked(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int checksXPtr, unsigned int checksYPtr, unsigned int col1Ptr, unsigned int col2Ptr) {
+void host_GenImageChecked(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int checksXPtr, unsigned int checksYPtr, unsigned int col1Ptr, unsigned int col2Ptr) {
     Color* col1 = cart_get_pointer(col1Ptr, sizeof(Color));
     Color* col2 = cart_get_pointer(col2Ptr, sizeof(Color));
     Image out = GenImageChecked(widthPtr, heightPtr, checksXPtr, checksYPtr, *col1, *col2);
     free((void*)col1);
     free((void*)col2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageWhiteNoise(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int factorPtr) {
+void host_GenImageWhiteNoise(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int factorPtr) {
     Image out = GenImageWhiteNoise(widthPtr, heightPtr, factorPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImagePerlinNoise(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int offsetXPtr, unsigned int offsetYPtr, unsigned int scalePtr) {
+void host_GenImagePerlinNoise(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int offsetXPtr, unsigned int offsetYPtr, unsigned int scalePtr) {
     Image out = GenImagePerlinNoise(widthPtr, heightPtr, offsetXPtr, offsetYPtr, scalePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageCellular(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int tileSizePtr) {
+void host_GenImageCellular(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int tileSizePtr) {
     Image out = GenImageCellular(widthPtr, heightPtr, tileSizePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageText(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int textPtr) {
+void host_GenImageText(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     Image out = GenImageText(widthPtr, heightPtr, text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ImageCopy(wasm_exec_env_t exec_env, unsigned int imagePtr) {
+void host_ImageCopy(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Image out = ImageCopy(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ImageFromImage(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int recPtr) {
+void host_ImageFromImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int recPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Rectangle* rec = cart_get_pointer(recPtr, sizeof(Rectangle));
     Image out = ImageFromImage(*image, *rec);
     free((void*)image);
     free((void*)rec);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ImageFromChannel(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int selectedChannelPtr) {
+void host_ImageFromChannel(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int selectedChannelPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Image out = ImageFromChannel(*image, selectedChannelPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ImageText(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int fontSizePtr, unsigned int colorPtr) {
+void host_ImageText(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int colorPtr) {
     const char* text = cart_get_string(textPtr);
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Image out = ImageText(text, fontSizePtr, *color);
     free((void*)text);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ImageTextEx(wasm_exec_env_t exec_env, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr, unsigned int tintPtr) {
+void host_ImageTextEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr, unsigned int tintPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     const char* text = cart_get_string(textPtr);
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
@@ -1959,7 +1959,7 @@ unsigned int host_ImageTextEx(wasm_exec_env_t exec_env, unsigned int fontPtr, un
     free((void*)font);
     free((void*)text);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_ImageFormat(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int newFormatPtr) {
@@ -2130,20 +2130,20 @@ void host_ImageColorReplace(wasm_exec_env_t exec_env, unsigned int imagePtr, uns
     free((void*)replace);
 }
 
-unsigned int host_LoadImageColors(wasm_exec_env_t exec_env, unsigned int imagePtr) {
+void host_LoadImageColors(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color * out = LoadImageColors(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadImagePalette(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int maxPaletteSizePtr, unsigned int colorCountPtr) {
+void host_LoadImagePalette(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int maxPaletteSizePtr, unsigned int colorCountPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     int ** colorCount = cart_get_pointer(colorCountPtr, sizeof(int *));
     Color * out = LoadImagePalette(*image, maxPaletteSizePtr, colorCount);
     free((void*)image);
     free((void*)colorCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadImageColors(wasm_exec_env_t exec_env, unsigned int colorsPtr) {
@@ -2158,18 +2158,18 @@ void host_UnloadImagePalette(wasm_exec_env_t exec_env, unsigned int colorsPtr) {
     free((void*)colors);
 }
 
-unsigned int host_GetImageAlphaBorder(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int thresholdPtr) {
+void host_GetImageAlphaBorder(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int thresholdPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Rectangle out = GetImageAlphaBorder(*image, thresholdPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetImageColor(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int xPtr, unsigned int yPtr) {
+void host_GetImageColor(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int xPtr, unsigned int yPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color out = GetImageColor(*image, xPtr, yPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_ImageClearBackground(wasm_exec_env_t exec_env, unsigned int dstPtr, unsigned int colorPtr) {
@@ -2410,30 +2410,30 @@ void host_ImageDrawTextEx(wasm_exec_env_t exec_env, unsigned int dstPtr, unsigne
     free((void*)tint);
 }
 
-unsigned int host_LoadTexture(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadTexture(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Texture2D out = LoadTexture(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadTextureFromImage(wasm_exec_env_t exec_env, unsigned int imagePtr) {
+void host_LoadTextureFromImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Texture2D out = LoadTextureFromImage(*image);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadTextureCubemap(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int layoutPtr) {
+void host_LoadTextureCubemap(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int layoutPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     TextureCubemap out = LoadTextureCubemap(*image, layoutPtr);
     free((void*)image);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadRenderTexture(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr) {
+void host_LoadRenderTexture(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr) {
     RenderTexture2D out = LoadRenderTexture(widthPtr, heightPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsTextureValid(wasm_exec_env_t exec_env, unsigned int texturePtr) {
@@ -2572,11 +2572,11 @@ unsigned int host_ColorIsEqual(wasm_exec_env_t exec_env, unsigned int col1Ptr, u
     free((void*)col2);
 }
 
-unsigned int host_Fade(wasm_exec_env_t exec_env, unsigned int colorPtr, unsigned int alphaPtr) {
+void host_Fade(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr, unsigned int alphaPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = Fade(*color, alphaPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_ColorToInt(wasm_exec_env_t exec_env, unsigned int colorPtr) {
@@ -2585,63 +2585,63 @@ unsigned int host_ColorToInt(wasm_exec_env_t exec_env, unsigned int colorPtr) {
     free((void*)color);
 }
 
-unsigned int host_ColorNormalize(wasm_exec_env_t exec_env, unsigned int colorPtr) {
+void host_ColorNormalize(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Vector4 out = ColorNormalize(*color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorFromNormalized(wasm_exec_env_t exec_env, unsigned int normalizedPtr) {
+void host_ColorFromNormalized(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int normalizedPtr) {
     Vector4* normalized = cart_get_pointer(normalizedPtr, sizeof(Vector4));
     Color out = ColorFromNormalized(*normalized);
     free((void*)normalized);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorToHSV(wasm_exec_env_t exec_env, unsigned int colorPtr) {
+void host_ColorToHSV(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Vector3 out = ColorToHSV(*color);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorFromHSV(wasm_exec_env_t exec_env, unsigned int huePtr, unsigned int saturationPtr, unsigned int valuePtr) {
+void host_ColorFromHSV(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int huePtr, unsigned int saturationPtr, unsigned int valuePtr) {
     Color out = ColorFromHSV(huePtr, saturationPtr, valuePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorTint(wasm_exec_env_t exec_env, unsigned int colorPtr, unsigned int tintPtr) {
+void host_ColorTint(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr, unsigned int tintPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
     Color out = ColorTint(*color, *tint);
     free((void*)color);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorBrightness(wasm_exec_env_t exec_env, unsigned int colorPtr, unsigned int factorPtr) {
+void host_ColorBrightness(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr, unsigned int factorPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorBrightness(*color, factorPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorContrast(wasm_exec_env_t exec_env, unsigned int colorPtr, unsigned int contrastPtr) {
+void host_ColorContrast(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr, unsigned int contrastPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorContrast(*color, contrastPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorAlpha(wasm_exec_env_t exec_env, unsigned int colorPtr, unsigned int alphaPtr) {
+void host_ColorAlpha(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int colorPtr, unsigned int alphaPtr) {
     Color* color = cart_get_pointer(colorPtr, sizeof(Color));
     Color out = ColorAlpha(*color, alphaPtr);
     free((void*)color);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorAlphaBlend(wasm_exec_env_t exec_env, unsigned int dstPtr, unsigned int srcPtr, unsigned int tintPtr) {
+void host_ColorAlphaBlend(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int dstPtr, unsigned int srcPtr, unsigned int tintPtr) {
     Color* dst = cart_get_pointer(dstPtr, sizeof(Color));
     Color* src = cart_get_pointer(srcPtr, sizeof(Color));
     Color* tint = cart_get_pointer(tintPtr, sizeof(Color));
@@ -2649,28 +2649,28 @@ unsigned int host_ColorAlphaBlend(wasm_exec_env_t exec_env, unsigned int dstPtr,
     free((void*)dst);
     free((void*)src);
     free((void*)tint);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_ColorLerp(wasm_exec_env_t exec_env, unsigned int color1Ptr, unsigned int color2Ptr, unsigned int factorPtr) {
+void host_ColorLerp(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int color1Ptr, unsigned int color2Ptr, unsigned int factorPtr) {
     Color* color1 = cart_get_pointer(color1Ptr, sizeof(Color));
     Color* color2 = cart_get_pointer(color2Ptr, sizeof(Color));
     Color out = ColorLerp(*color1, *color2, factorPtr);
     free((void*)color1);
     free((void*)color2);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetColor(wasm_exec_env_t exec_env, unsigned int hexValuePtr) {
+void host_GetColor(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int hexValuePtr) {
     Color out = GetColor(hexValuePtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetPixelColor(wasm_exec_env_t exec_env, unsigned int srcPtrPtr, unsigned int formatPtr) {
+void host_GetPixelColor(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int srcPtrPtr, unsigned int formatPtr) {
     void ** srcPtr = cart_get_pointer(srcPtrPtr, sizeof(void *));
     Color out = GetPixelColor(srcPtr, formatPtr);
     free((void*)srcPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_SetPixelColor(wasm_exec_env_t exec_env, unsigned int dstPtrPtr, unsigned int colorPtr, unsigned int formatPtr) {
@@ -2685,37 +2685,37 @@ unsigned int host_GetPixelDataSize(wasm_exec_env_t exec_env, unsigned int widthP
     return GetPixelDataSize(widthPtr, heightPtr, formatPtr);
 }
 
-unsigned int host_GetFontDefault(wasm_exec_env_t exec_env, ) {
+void host_GetFontDefault(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Font out = GetFontDefault();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadFont(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadFont(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Font out = LoadFont(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadFontEx(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
+void host_LoadFontEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
     Font out = LoadFontEx(fileName, fontSizePtr, codepoints, codepointCountPtr);
     free((void*)fileName);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadFontFromImage(wasm_exec_env_t exec_env, unsigned int imagePtr, unsigned int keyPtr, unsigned int firstCharPtr) {
+void host_LoadFontFromImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int keyPtr, unsigned int firstCharPtr) {
     Image* image = cart_get_pointer(imagePtr, sizeof(Image));
     Color* key = cart_get_pointer(keyPtr, sizeof(Color));
     Font out = LoadFontFromImage(*image, *key, firstCharPtr);
     free((void*)image);
     free((void*)key);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadFontFromMemory(wasm_exec_env_t exec_env, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
+void host_LoadFontFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
@@ -2723,7 +2723,7 @@ unsigned int host_LoadFontFromMemory(wasm_exec_env_t exec_env, unsigned int file
     free((void*)fileType);
     free((void*)fileData);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsFontValid(wasm_exec_env_t exec_env, unsigned int fontPtr) {
@@ -2732,22 +2732,22 @@ unsigned int host_IsFontValid(wasm_exec_env_t exec_env, unsigned int fontPtr) {
     free((void*)font);
 }
 
-unsigned int host_LoadFontData(wasm_exec_env_t exec_env, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr, unsigned int typePtr) {
+void host_LoadFontData(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileDataPtr, unsigned int dataSizePtr, unsigned int fontSizePtr, unsigned int codepointsPtr, unsigned int codepointCountPtr, unsigned int typePtr) {
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(int *));
     GlyphInfo * out = LoadFontData(fileData, dataSizePtr, fontSizePtr, codepoints, codepointCountPtr, typePtr);
     free((void*)fileData);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenImageFontAtlas(wasm_exec_env_t exec_env, unsigned int glyphsPtr, unsigned int glyphRecsPtr, unsigned int glyphCountPtr, unsigned int fontSizePtr, unsigned int paddingPtr, unsigned int packMethodPtr) {
+void host_GenImageFontAtlas(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int glyphsPtr, unsigned int glyphRecsPtr, unsigned int glyphCountPtr, unsigned int fontSizePtr, unsigned int paddingPtr, unsigned int packMethodPtr) {
     const GlyphInfo ** glyphs = cart_get_pointer(glyphsPtr, sizeof(const GlyphInfo *));
     Rectangle *** glyphRecs = cart_get_pointer(glyphRecsPtr, sizeof(Rectangle **));
     Image out = GenImageFontAtlas(glyphs, glyphRecs, glyphCountPtr, fontSizePtr, paddingPtr, packMethodPtr);
     free((void*)glyphs);
     free((void*)glyphRecs);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadFontData(wasm_exec_env_t exec_env, unsigned int glyphsPtr, unsigned int glyphCountPtr) {
@@ -2840,13 +2840,13 @@ unsigned int host_MeasureText(wasm_exec_env_t exec_env, unsigned int textPtr, un
     free((void*)text);
 }
 
-unsigned int host_MeasureTextEx(wasm_exec_env_t exec_env, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr) {
+void host_MeasureTextEx(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fontPtr, unsigned int textPtr, unsigned int fontSizePtr, unsigned int spacingPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     const char* text = cart_get_string(textPtr);
     Vector2 out = MeasureTextEx(*font, text, fontSizePtr, spacingPtr);
     free((void*)font);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_GetGlyphIndex(wasm_exec_env_t exec_env, unsigned int fontPtr, unsigned int codepointPtr) {
@@ -2855,25 +2855,25 @@ unsigned int host_GetGlyphIndex(wasm_exec_env_t exec_env, unsigned int fontPtr, 
     free((void*)font);
 }
 
-unsigned int host_GetGlyphInfo(wasm_exec_env_t exec_env, unsigned int fontPtr, unsigned int codepointPtr) {
+void host_GetGlyphInfo(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fontPtr, unsigned int codepointPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     GlyphInfo out = GetGlyphInfo(*font, codepointPtr);
     free((void*)font);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetGlyphAtlasRec(wasm_exec_env_t exec_env, unsigned int fontPtr, unsigned int codepointPtr) {
+void host_GetGlyphAtlasRec(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fontPtr, unsigned int codepointPtr) {
     Font* font = cart_get_pointer(fontPtr, sizeof(Font));
     Rectangle out = GetGlyphAtlasRec(*font, codepointPtr);
     free((void*)font);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadUTF8(wasm_exec_env_t exec_env, unsigned int codepointsPtr, unsigned int lengthPtr) {
+void host_LoadUTF8(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int codepointsPtr, unsigned int lengthPtr) {
     const int ** codepoints = cart_get_pointer(codepointsPtr, sizeof(const int *));
     char * out = LoadUTF8(codepoints, lengthPtr);
     free((void*)codepoints);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadUTF8(wasm_exec_env_t exec_env, unsigned int textPtr) {
@@ -2882,13 +2882,13 @@ void host_UnloadUTF8(wasm_exec_env_t exec_env, unsigned int textPtr) {
     free((void*)text);
 }
 
-unsigned int host_LoadCodepoints(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int countPtr) {
+void host_LoadCodepoints(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int countPtr) {
     const char* text = cart_get_string(textPtr);
     int ** count = cart_get_pointer(countPtr, sizeof(int *));
     int * out = LoadCodepoints(text, count);
     free((void*)text);
     free((void*)count);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadCodepoints(wasm_exec_env_t exec_env, unsigned int codepointsPtr) {
@@ -2927,11 +2927,11 @@ unsigned int host_GetCodepointPrevious(wasm_exec_env_t exec_env, unsigned int te
     free((void*)codepointSize);
 }
 
-unsigned int host_CodepointToUTF8(wasm_exec_env_t exec_env, unsigned int codepointPtr, unsigned int utf8SizePtr) {
+void host_CodepointToUTF8(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int codepointPtr, unsigned int utf8SizePtr) {
     int ** utf8Size = cart_get_pointer(utf8SizePtr, sizeof(int *));
     const char * out = CodepointToUTF8(codepointPtr, utf8Size);
     free((void*)utf8Size);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_TextCopy(wasm_exec_env_t exec_env, unsigned int dstPtr, unsigned int srcPtr) {
@@ -2956,23 +2956,23 @@ unsigned int host_TextLength(wasm_exec_env_t exec_env, unsigned int textPtr) {
     free((void*)text);
 }
 
-unsigned int host_TextFormat(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int argsPtr) {
+void host_TextFormat(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int argsPtr) {
     const char* text = cart_get_string(textPtr);
     ...* args = cart_get_pointer(argsPtr, sizeof(...));
     const char * out = TextFormat(text, *args);
     free((void*)text);
     free((void*)args);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextSubtext(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int positionPtr, unsigned int lengthPtr) {
+void host_TextSubtext(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int positionPtr, unsigned int lengthPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextSubtext(text, positionPtr, lengthPtr);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextReplace(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int replacePtr, unsigned int byPtr) {
+void host_TextReplace(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int replacePtr, unsigned int byPtr) {
     const char* text = cart_get_string(textPtr);
     const char* replace = cart_get_string(replacePtr);
     const char* by = cart_get_string(byPtr);
@@ -2980,34 +2980,34 @@ unsigned int host_TextReplace(wasm_exec_env_t exec_env, unsigned int textPtr, un
     free((void*)text);
     free((void*)replace);
     free((void*)by);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextInsert(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int insertPtr, unsigned int positionPtr) {
+void host_TextInsert(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int insertPtr, unsigned int positionPtr) {
     const char* text = cart_get_string(textPtr);
     const char* insert = cart_get_string(insertPtr);
     char * out = TextInsert(text, insert, positionPtr);
     free((void*)text);
     free((void*)insert);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextJoin(wasm_exec_env_t exec_env, unsigned int textListPtr, unsigned int countPtr, unsigned int delimiterPtr) {
+void host_TextJoin(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textListPtr, unsigned int countPtr, unsigned int delimiterPtr) {
     const char *** textList = cart_get_pointer(textListPtr, sizeof(const char **));
     const char* delimiter = cart_get_string(delimiterPtr);
     const char * out = TextJoin(textList, countPtr, delimiter);
     free((void*)textList);
     free((void*)delimiter);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextSplit(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int delimiterPtr, unsigned int countPtr) {
+void host_TextSplit(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr, unsigned int delimiterPtr, unsigned int countPtr) {
     const char* text = cart_get_string(textPtr);
     int ** count = cart_get_pointer(countPtr, sizeof(int *));
     const char ** out = TextSplit(text, delimiterPtr, count);
     free((void*)text);
     free((void*)count);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_TextAppend(wasm_exec_env_t exec_env, unsigned int textPtr, unsigned int appendPtr, unsigned int positionPtr) {
@@ -3028,39 +3028,39 @@ unsigned int host_TextFindIndex(wasm_exec_env_t exec_env, unsigned int textPtr, 
     free((void*)find);
 }
 
-unsigned int host_TextToUpper(wasm_exec_env_t exec_env, unsigned int textPtr) {
+void host_TextToUpper(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToUpper(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextToLower(wasm_exec_env_t exec_env, unsigned int textPtr) {
+void host_TextToLower(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToLower(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextToPascal(wasm_exec_env_t exec_env, unsigned int textPtr) {
+void host_TextToPascal(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToPascal(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextToSnake(wasm_exec_env_t exec_env, unsigned int textPtr) {
+void host_TextToSnake(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToSnake(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_TextToCamel(wasm_exec_env_t exec_env, unsigned int textPtr) {
+void host_TextToCamel(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int textPtr) {
     const char* text = cart_get_string(textPtr);
     const char * out = TextToCamel(text);
     free((void*)text);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_TextToInteger(wasm_exec_env_t exec_env, unsigned int textPtr) {
@@ -3261,18 +3261,18 @@ void host_DrawGrid(wasm_exec_env_t exec_env, unsigned int slicesPtr, unsigned in
     DrawGrid(slicesPtr, spacingPtr);
 }
 
-unsigned int host_LoadModel(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadModel(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Model out = LoadModel(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadModelFromMesh(wasm_exec_env_t exec_env, unsigned int meshPtr) {
+void host_LoadModelFromMesh(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int meshPtr) {
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     Model out = LoadModelFromMesh(*mesh);
     free((void*)mesh);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsModelValid(wasm_exec_env_t exec_env, unsigned int modelPtr) {
@@ -3287,11 +3287,11 @@ void host_UnloadModel(wasm_exec_env_t exec_env, unsigned int modelPtr) {
     free((void*)model);
 }
 
-unsigned int host_GetModelBoundingBox(wasm_exec_env_t exec_env, unsigned int modelPtr) {
+void host_GetModelBoundingBox(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int modelPtr) {
     Model* model = cart_get_pointer(modelPtr, sizeof(Model));
     BoundingBox out = GetModelBoundingBox(*model);
     free((void*)model);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_DrawModel(wasm_exec_env_t exec_env, unsigned int modelPtr, unsigned int positionPtr, unsigned int scalePtr, unsigned int tintPtr) {
@@ -3462,11 +3462,11 @@ void host_DrawMeshInstanced(wasm_exec_env_t exec_env, unsigned int meshPtr, unsi
     free((void*)transforms);
 }
 
-unsigned int host_GetMeshBoundingBox(wasm_exec_env_t exec_env, unsigned int meshPtr) {
+void host_GetMeshBoundingBox(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int meshPtr) {
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     BoundingBox out = GetMeshBoundingBox(*mesh);
     free((void*)mesh);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_GenMeshTangents(wasm_exec_env_t exec_env, unsigned int meshPtr) {
@@ -3491,81 +3491,81 @@ unsigned int host_ExportMeshAsCode(wasm_exec_env_t exec_env, unsigned int meshPt
     free((void*)fileName);
 }
 
-unsigned int host_GenMeshPoly(wasm_exec_env_t exec_env, unsigned int sidesPtr, unsigned int radiusPtr) {
+void host_GenMeshPoly(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int sidesPtr, unsigned int radiusPtr) {
     Mesh out = GenMeshPoly(sidesPtr, radiusPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshPlane(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int lengthPtr, unsigned int resXPtr, unsigned int resZPtr) {
+void host_GenMeshPlane(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int lengthPtr, unsigned int resXPtr, unsigned int resZPtr) {
     Mesh out = GenMeshPlane(widthPtr, lengthPtr, resXPtr, resZPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshCube(wasm_exec_env_t exec_env, unsigned int widthPtr, unsigned int heightPtr, unsigned int lengthPtr) {
+void host_GenMeshCube(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int widthPtr, unsigned int heightPtr, unsigned int lengthPtr) {
     Mesh out = GenMeshCube(widthPtr, heightPtr, lengthPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshSphere(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
+void host_GenMeshSphere(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshSphere(radiusPtr, ringsPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshHemiSphere(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
+void host_GenMeshHemiSphere(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int ringsPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshHemiSphere(radiusPtr, ringsPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshCylinder(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
+void host_GenMeshCylinder(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshCylinder(radiusPtr, heightPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshCone(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
+void host_GenMeshCone(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int heightPtr, unsigned int slicesPtr) {
     Mesh out = GenMeshCone(radiusPtr, heightPtr, slicesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshTorus(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
+void host_GenMeshTorus(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
     Mesh out = GenMeshTorus(radiusPtr, sizePtr, radSegPtr, sidesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshKnot(wasm_exec_env_t exec_env, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
+void host_GenMeshKnot(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int radiusPtr, unsigned int sizePtr, unsigned int radSegPtr, unsigned int sidesPtr) {
     Mesh out = GenMeshKnot(radiusPtr, sizePtr, radSegPtr, sidesPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshHeightmap(wasm_exec_env_t exec_env, unsigned int heightmapPtr, unsigned int sizePtr) {
+void host_GenMeshHeightmap(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int heightmapPtr, unsigned int sizePtr) {
     Image* heightmap = cart_get_pointer(heightmapPtr, sizeof(Image));
     Vector3* size = cart_get_pointer(sizePtr, sizeof(Vector3));
     Mesh out = GenMeshHeightmap(*heightmap, *size);
     free((void*)heightmap);
     free((void*)size);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GenMeshCubicmap(wasm_exec_env_t exec_env, unsigned int cubicmapPtr, unsigned int cubeSizePtr) {
+void host_GenMeshCubicmap(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int cubicmapPtr, unsigned int cubeSizePtr) {
     Image* cubicmap = cart_get_pointer(cubicmapPtr, sizeof(Image));
     Vector3* cubeSize = cart_get_pointer(cubeSizePtr, sizeof(Vector3));
     Mesh out = GenMeshCubicmap(*cubicmap, *cubeSize);
     free((void*)cubicmap);
     free((void*)cubeSize);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadMaterials(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int materialCountPtr) {
+void host_LoadMaterials(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int materialCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** materialCount = cart_get_pointer(materialCountPtr, sizeof(int *));
     Material * out = LoadMaterials(fileName, materialCount);
     free((void*)fileName);
     free((void*)materialCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadMaterialDefault(wasm_exec_env_t exec_env, ) {
+void host_LoadMaterialDefault(wasm_exec_env_t exec_env, unsigned int outPtr) {
     Material out = LoadMaterialDefault();
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsMaterialValid(wasm_exec_env_t exec_env, unsigned int materialPtr) {
@@ -3594,13 +3594,13 @@ void host_SetModelMeshMaterial(wasm_exec_env_t exec_env, unsigned int modelPtr, 
     free((void*)model);
 }
 
-unsigned int host_LoadModelAnimations(wasm_exec_env_t exec_env, unsigned int fileNamePtr, unsigned int animCountPtr) {
+void host_LoadModelAnimations(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr, unsigned int animCountPtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     int ** animCount = cart_get_pointer(animCountPtr, sizeof(int *));
     ModelAnimation * out = LoadModelAnimations(fileName, animCount);
     free((void*)fileName);
     free((void*)animCount);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UpdateModelAnimation(wasm_exec_env_t exec_env, unsigned int modelPtr, unsigned int animPtr, unsigned int framePtr) {
@@ -3663,25 +3663,25 @@ unsigned int host_CheckCollisionBoxSphere(wasm_exec_env_t exec_env, unsigned int
     free((void*)center);
 }
 
-unsigned int host_GetRayCollisionSphere(wasm_exec_env_t exec_env, unsigned int rayPtr, unsigned int centerPtr, unsigned int radiusPtr) {
+void host_GetRayCollisionSphere(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rayPtr, unsigned int centerPtr, unsigned int radiusPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* center = cart_get_pointer(centerPtr, sizeof(Vector3));
     RayCollision out = GetRayCollisionSphere(*ray, *center, radiusPtr);
     free((void*)ray);
     free((void*)center);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetRayCollisionBox(wasm_exec_env_t exec_env, unsigned int rayPtr, unsigned int boxPtr) {
+void host_GetRayCollisionBox(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rayPtr, unsigned int boxPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     BoundingBox* box = cart_get_pointer(boxPtr, sizeof(BoundingBox));
     RayCollision out = GetRayCollisionBox(*ray, *box);
     free((void*)ray);
     free((void*)box);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetRayCollisionMesh(wasm_exec_env_t exec_env, unsigned int rayPtr, unsigned int meshPtr, unsigned int transformPtr) {
+void host_GetRayCollisionMesh(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rayPtr, unsigned int meshPtr, unsigned int transformPtr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Mesh* mesh = cart_get_pointer(meshPtr, sizeof(Mesh));
     Matrix* transform = cart_get_pointer(transformPtr, sizeof(Matrix));
@@ -3689,10 +3689,10 @@ unsigned int host_GetRayCollisionMesh(wasm_exec_env_t exec_env, unsigned int ray
     free((void*)ray);
     free((void*)mesh);
     free((void*)transform);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetRayCollisionTriangle(wasm_exec_env_t exec_env, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr) {
+void host_GetRayCollisionTriangle(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* p1 = cart_get_pointer(p1Ptr, sizeof(Vector3));
     Vector3* p2 = cart_get_pointer(p2Ptr, sizeof(Vector3));
@@ -3702,10 +3702,10 @@ unsigned int host_GetRayCollisionTriangle(wasm_exec_env_t exec_env, unsigned int
     free((void*)p1);
     free((void*)p2);
     free((void*)p3);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_GetRayCollisionQuad(wasm_exec_env_t exec_env, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr) {
+void host_GetRayCollisionQuad(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int rayPtr, unsigned int p1Ptr, unsigned int p2Ptr, unsigned int p3Ptr, unsigned int p4Ptr) {
     Ray* ray = cart_get_pointer(rayPtr, sizeof(Ray));
     Vector3* p1 = cart_get_pointer(p1Ptr, sizeof(Vector3));
     Vector3* p2 = cart_get_pointer(p2Ptr, sizeof(Vector3));
@@ -3717,7 +3717,7 @@ unsigned int host_GetRayCollisionQuad(wasm_exec_env_t exec_env, unsigned int ray
     free((void*)p2);
     free((void*)p3);
     free((void*)p4);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_InitAudioDevice(wasm_exec_env_t exec_env, ) {
@@ -3740,20 +3740,20 @@ unsigned int host_GetMasterVolume(wasm_exec_env_t exec_env, ) {
     return GetMasterVolume();
 }
 
-unsigned int host_LoadWave(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadWave(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Wave out = LoadWave(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadWaveFromMemory(wasm_exec_env_t exec_env, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
+void host_LoadWaveFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileTypePtr, unsigned int fileDataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** fileData = cart_get_pointer(fileDataPtr, sizeof(const unsigned char *));
     Wave out = LoadWaveFromMemory(fileType, fileData, dataSizePtr);
     free((void*)fileType);
     free((void*)fileData);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsWaveValid(wasm_exec_env_t exec_env, unsigned int wavePtr) {
@@ -3762,25 +3762,25 @@ unsigned int host_IsWaveValid(wasm_exec_env_t exec_env, unsigned int wavePtr) {
     free((void*)wave);
 }
 
-unsigned int host_LoadSound(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadSound(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Sound out = LoadSound(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadSoundFromWave(wasm_exec_env_t exec_env, unsigned int wavePtr) {
+void host_LoadSoundFromWave(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     Sound out = LoadSoundFromWave(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadSoundAlias(wasm_exec_env_t exec_env, unsigned int sourcePtr) {
+void host_LoadSoundAlias(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int sourcePtr) {
     Sound* source = cart_get_pointer(sourcePtr, sizeof(Sound));
     Sound out = LoadSoundAlias(*source);
     free((void*)source);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsSoundValid(wasm_exec_env_t exec_env, unsigned int soundPtr) {
@@ -3879,11 +3879,11 @@ void host_SetSoundPan(wasm_exec_env_t exec_env, unsigned int soundPtr, unsigned 
     free((void*)sound);
 }
 
-unsigned int host_WaveCopy(wasm_exec_env_t exec_env, unsigned int wavePtr) {
+void host_WaveCopy(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     Wave out = WaveCopy(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_WaveCrop(wasm_exec_env_t exec_env, unsigned int wavePtr, unsigned int initFramePtr, unsigned int finalFramePtr) {
@@ -3898,11 +3898,11 @@ void host_WaveFormat(wasm_exec_env_t exec_env, unsigned int wavePtr, unsigned in
     free((void*)wave);
 }
 
-unsigned int host_LoadWaveSamples(wasm_exec_env_t exec_env, unsigned int wavePtr) {
+void host_LoadWaveSamples(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int wavePtr) {
     Wave* wave = cart_get_pointer(wavePtr, sizeof(Wave));
     float * out = LoadWaveSamples(*wave);
     free((void*)wave);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 void host_UnloadWaveSamples(wasm_exec_env_t exec_env, unsigned int samplesPtr) {
@@ -3911,20 +3911,20 @@ void host_UnloadWaveSamples(wasm_exec_env_t exec_env, unsigned int samplesPtr) {
     free((void*)samples);
 }
 
-unsigned int host_LoadMusicStream(wasm_exec_env_t exec_env, unsigned int fileNamePtr) {
+void host_LoadMusicStream(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
     Music out = LoadMusicStream(fileName);
     free((void*)fileName);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
-unsigned int host_LoadMusicStreamFromMemory(wasm_exec_env_t exec_env, unsigned int fileTypePtr, unsigned int dataPtr, unsigned int dataSizePtr) {
+void host_LoadMusicStreamFromMemory(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileTypePtr, unsigned int dataPtr, unsigned int dataSizePtr) {
     const char* fileType = cart_get_string(fileTypePtr);
     const unsigned char ** data = cart_get_pointer(dataPtr, sizeof(const unsigned char *));
     Music out = LoadMusicStreamFromMemory(fileType, data, dataSizePtr);
     free((void*)fileType);
     free((void*)data);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsMusicValid(wasm_exec_env_t exec_env, unsigned int musicPtr) {
@@ -4011,9 +4011,9 @@ unsigned int host_GetMusicTimePlayed(wasm_exec_env_t exec_env, unsigned int musi
     free((void*)music);
 }
 
-unsigned int host_LoadAudioStream(wasm_exec_env_t exec_env, unsigned int sampleRatePtr, unsigned int sampleSizePtr, unsigned int channelsPtr) {
+void host_LoadAudioStream(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int sampleRatePtr, unsigned int sampleSizePtr, unsigned int channelsPtr) {
     AudioStream out = LoadAudioStream(sampleRatePtr, sampleSizePtr, channelsPtr);
-    return cart_set_pointer(&out, sizeof(out));
+    cart_set_pointer(&out, sizeof(out), outPtr);
 }
 
 unsigned int host_IsAudioStreamValid(wasm_exec_env_t exec_env, unsigned int streamPtr) {

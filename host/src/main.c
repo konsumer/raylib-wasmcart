@@ -10,7 +10,7 @@
 void* cart_get_pointer(unsigned int cartPtr, unsigned int len);
 
 // copy a pointer from host to cart
-unsigned int cart_set_pointer(void* hostPtr, unsigned int len);
+unsigned int cart_set_pointer(void* hostPtr, unsigned int len, unsigned int cartPtr);
 
 // copy a string from cart to host
 char* cart_get_string(unsigned int cartPtr);

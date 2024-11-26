@@ -21,8 +21,8 @@ EM_JS(void*, cart_get_pointer, (unsigned int cartPtr, unsigned int len), {
 });
 
 // copy a pointer from host to cart
-EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len), {
-  const cartPtr = Module.cart.malloc(len);
+EM_JS(unsigned int, cart_set_pointer, (void* hostPtr, unsigned int len, unsigned int cartPtr), {
+  cartPtr = cartPtr || Module.cart.malloc(len);
   new Uint8Array(Module.cart.memory.buffer).set(Module.HEAPU8.slice(hostPtr, hostPtr + len), cartPtr);
   return cartPtr;
 });

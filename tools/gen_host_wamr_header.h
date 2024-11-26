@@ -22,9 +22,10 @@ void* cart_get_pointer(unsigned int cartPtr, unsigned int len) {
   return hostPtr;
 }
 
-unsigned int cart_set_pointer(void* hostPtr, unsigned int len) {
-  unsigned int cartPtr = wasm_runtime_malloc(module_inst, len);
-  if (!cartPtr) return 0;
+unsigned int cart_set_pointer(void* hostPtr, unsigned int len, unsigned int cartPtr) {
+  if (cartPtr == 0) {
+    cartPtr = wasm_runtime_malloc(module_inst, len);
+  }
 
   void* wasmPtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
   if (!wasmPtr) {
