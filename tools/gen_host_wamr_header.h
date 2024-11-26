@@ -1,75 +1,63 @@
+#pragma once
 #include <stdlib.h>
 #include <string.h>
 
+#include "wasm_c_api.h"
 #include "wasm_export.h"
 
 // Global reference to the WASM runtime instance
+static wasm_module_t module;
 static wasm_module_inst_t module_inst;
+static wasm_function_inst_t func;
+static wasm_exec_env_t exec_env;
+static wasm_function_inst_t cart_update = NULL;
+static wasm_function_inst_t cart_unload = NULL;
+static uint64_t update_args[1];
 
-void init_wamr_helpers(wasm_module_inst_t inst) { module_inst = inst; }
-
+// copy a pointer from cart to host
 void* cart_get_pointer(unsigned int cartPtr, unsigned int len) {
-  void* hostPtr = malloc(len);
-  if (!hostPtr) return NULL;
-
-  void* wasmPtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
-  if (!wasmPtr) {
-    free(hostPtr);
-    return NULL;
-  }
-
-  memcpy(hostPtr, wasmPtr, len);
-  return hostPtr;
+    void* out = malloc(len);
+    memcpy(out, wasm_runtime_addr_app_to_native(module_inst, (uint64_t)cartPtr), len);
+    return out;
 }
 
+// copy a pointer from host to cart
 unsigned int cart_set_pointer(void* hostPtr, unsigned int len, unsigned int cartPtr) {
-  if (cartPtr == 0) {
-    cartPtr = wasm_runtime_malloc(module_inst, len);
+  if (cartPtr ==0) {
+    cartPtr = wasm_runtime_module_malloc(module_inst, len, NULL);
   }
-
-  void* wasmPtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
-  if (!wasmPtr) {
-    wasm_runtime_free(module_inst, cartPtr);
-    return 0;
-  }
-
-  memcpy(wasmPtr, hostPtr, len);
-  return cartPtr;
+    if (cartPtr == 0) {
+        return 0;
+    }
+    void* nativePtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+    if (!nativePtr) {
+        wasm_runtime_module_free(module_inst, cartPtr);
+        return 0;
+    }
+    memcpy(nativePtr, hostPtr, len);
+    return cartPtr;
 }
 
+// copy a string from cart to host
 char* cart_get_string(unsigned int cartPtr) {
-  if (!cartPtr) return NULL;
-
-  const char* wasmStr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
-  if (!wasmStr) return NULL;
-
-  size_t len = strlen(wasmStr) + 1;
-  char* hostStr = malloc(len);
-  if (!hostStr) return NULL;
-
-  memcpy(hostStr, wasmStr, len);
-  return hostStr;
+    return wasm_runtime_addr_app_to_native(module_inst, cartPtr);
 }
 
-unsigned int cart_set_string(char* hostStr) {
-  if (!hostStr) return 0;
-
-  size_t len = strlen(hostStr) + 1;
-  unsigned int cartPtr = wasm_runtime_malloc(module_inst, len);
-  if (!cartPtr) return 0;
-
-  void* wasmPtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
-  if (!wasmPtr) {
-    wasm_runtime_free(module_inst, cartPtr);
-    return 0;
-  }
-
-  memcpy(wasmPtr, hostStr, len);
+// copy a string from host to cart
+unsigned int cart_set_string(char* hostPtr) {
+  unsigned int len = strlen(hostPtr) + 1;
+  unsigned int cartPtr = wasm_runtime_module_malloc(module_inst, len, NULL);
+  void* nativePtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+  memcpy(nativePtr, hostPtr, len);
   return cartPtr;
 }
 
+// allocate cart-memory from host C
 unsigned int cart_malloc(int size) {
-  return wasm_runtime_malloc(module_inst, size);
+  return wasm_runtime_module_malloc(module_inst, size, NULL);
 }
 
-void cart_free(unsigned int ptr) { wasm_runtime_free(module_inst, ptr); }
+// free cart-memory from host C
+void cart_free (unsigned int ptr) {
+  wasm_runtime_module_free(module_inst, ptr);
+}

@@ -73,9 +73,12 @@ function generateFunctionSignature(func, isWamr = false) {
   const returnType = func.returnType === 'void' || needsPointerHandling(func.returnType)
     ? 'void'
     : 'unsigned int'
-  const wamrParam = isWamr ? 'wasm_exec_env_t exec_env, ' : ''
 
   let params = []
+
+  if (isWamr) {
+    params.push('wasm_exec_env_t exec_env')
+  }
 
   // Add output parameter for struct returns
   if (needsPointerHandling(func.returnType) && func.returnType !== 'void') {
@@ -86,7 +89,7 @@ function generateFunctionSignature(func, isWamr = false) {
   params = params.concat((func.params || [])
     .map((param) => `unsigned int ${param.name}Ptr`))
 
-  return `${returnType} host_${func.name}(${wamrParam}${params.join(', ')})`
+  return `${returnType} host_${func.name}(${params.join(', ')})`
 }
 
 function generateFunctionBody(func) {
@@ -153,13 +156,30 @@ function generateWamrHeader(api) {
   let output = ``
 
   api.forEach((func) => {
-    output += `${generateFunctionSignature(func, true)} {\n`
-    output += generateFunctionBody(func)
-    output += `}\n\n`
+    if (!skippedFunctions.includes(func.name)) {
+      output += `${generateFunctionSignature(func, true)} {\n`
+      output += generateFunctionBody(func)
+      output += `}\n\n`
+    }
   })
 
   return output
 }
+
+function generateWamrSymbols(api) {
+  const out = ['static NativeSymbol native_symbols[] = {']
+  const functions = []
+  for (const func of api) {
+    if (!skippedFunctions.includes(func.name)) {
+      functions.push(`  {"${func.name}", host_${func.name}, NULL}`)
+    }
+  }
+  out.push(functions.join(',\n'))
+  out.push('};')
+  return out.join('\n')
+}
+
+
 
 const api = JSON.parse(await readFile('build/_deps/raylib-src/parser/output/raylib_api.json', 'utf8'))
 
@@ -170,8 +190,15 @@ for (const f of Object.values(api.functions)) {
   }
 }
 
+await writeFile('host/src/null0_host_emscripten.h', [
+  (await readFile('tools/gen_host_emscripten_header.h', 'utf8')),
+  generateEmscriptenHeader(api.functions),
+  (await readFile('tools/gen_host_emscripten_footer.h', 'utf8'))
+].join('\n'))
 
-
-await writeFile('host/src/null0_host_emscripten.h', (await readFile('tools/gen_host_emscripten_header.h', 'utf8')) + generateEmscriptenHeader(api.functions) + (await readFile('tools/gen_host_emscripten_footer.h', 'utf8')))
-
-await writeFile('host/src/null0_host_wamr.h', (await readFile('tools/gen_host_wamr_header.h', 'utf8')) + generateWamrHeader(api.functions) + (await readFile('tools/gen_host_wamr_footer.h', 'utf8')))
+await writeFile('host/src/null0_host_wamr.h', [
+  (await readFile('tools/gen_host_wamr_header.h', 'utf8')),
+  generateWamrHeader(api.functions),
+  generateWamrSymbols(api.functions),
+  (await readFile('tools/gen_host_wamr_footer.h', 'utf8'))
+].join('\n'))

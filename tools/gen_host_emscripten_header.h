@@ -1,5 +1,5 @@
+#pragma once
 #include <emscripten.h>
-#include <stdio.h>
 #include <string.h>
 
 // allocate cart-memory from host C

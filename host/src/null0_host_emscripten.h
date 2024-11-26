@@ -1,5 +1,5 @@
+#pragma once
 #include <emscripten.h>
-#include <stdio.h>
 #include <string.h>
 
 // allocate cart-memory from host C
@@ -44,6 +44,7 @@ EM_JS(unsigned int, cart_set_string, (char* hostPtr), {
     return cart_set_pointer(hostPtr, len + 1);
   }
 });
+
 EMSCRIPTEN_KEEPALIVE void host_InitWindow(unsigned int widthPtr, unsigned int heightPtr, unsigned int titlePtr) {
     const char* title = cart_get_string(titlePtr);
     InitWindow(widthPtr, heightPtr, title);
@@ -4078,6 +4079,7 @@ EMSCRIPTEN_KEEPALIVE void host_DetachAudioMixedProcessor(unsigned int processorP
     DetachAudioMixedProcessor(*processor);
     free((void*)processor);
 }
+
 
 
 
