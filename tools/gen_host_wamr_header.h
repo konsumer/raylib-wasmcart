@@ -40,7 +40,9 @@ unsigned int cart_set_pointer(void* hostPtr, unsigned int len, unsigned int cart
 
 // copy a string from cart to host
 char* cart_get_string(unsigned int cartPtr) {
-    return wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+  void* nativePtr = wasm_runtime_addr_app_to_native(module_inst, cartPtr);
+  unsigned int len = strlen(nativePtr) + 1;
+  return cart_get_pointer(cartPtr, len);
 }
 
 // copy a string from host to cart
