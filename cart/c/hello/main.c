@@ -14,7 +14,7 @@ int main() {
 }
 
 void update(double time) {
-  ClearBackground(BLUE);
+  ClearBackground(BLACK);
   DrawTexture(logo, 800/2 - logo.width/2, 600/2 - (logo.height + 20), WHITE);
   DrawText("Congrats! You created your first window!", 190, 290, 20, LIGHTGRAY);
 }

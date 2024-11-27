@@ -8,8 +8,9 @@
     "build:web": "emcmake cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -B wbuild -DPLATFORM=Web -DCARTS_ONLY=OFF && cmake --build wbuild",
     "build:carts": "cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -B build -DCARTS_ONLY=ON && cmake --build build",
     "build:web:reload": "nodemon -w ./host -e c,cpp,h -x \"npm run build:web\"",
+    "build:cart:reload": "nodemon -w ./cart -e c,cpp,h,png -x \"npm run build:carts\"",
     "dev:web": "live-server docs",
-    "start": "npm run build:web && run-p build:web:reload dev:web",
+    "start": "npm run build:web && run-p build:web:reload dev:web build:cart:reload",
     "start:docker": "docker run -it --rm -p 8080:8080 --mount type=bind,src=.,dst=/src emscripten/emsdk ./tools/docker-dev.sh"
   },
   "keywords": [],

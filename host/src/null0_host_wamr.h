@@ -1739,8 +1739,24 @@ void host_GetCollisionRec(wasm_exec_env_t exec_env, unsigned int outPtr, unsigne
 
 void host_LoadImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int fileNamePtr) {
     const char* fileName = cart_get_string(fileNamePtr);
-    Image out = LoadImage(fileName);
-    cart_set_pointer(&out, sizeof(out), outPtr);
+    Image image = LoadImage(fileName);
+    printf("DEBUG: LoadImage format=%d\n", image.format);
+
+    // Convert to WasmImage
+    WasmImage wi = {
+        .id = cvector_size(imageDatas),
+        .width = image.width,
+        .height = image.height,
+        .mipmaps = image.mipmaps,
+        .format = image.format
+    };
+    printf("DEBUG: WasmImage format=%d\n", wi.format);
+
+    // Store the image data
+    cvector_push_back(imageDatas, image.data);
+
+    // Send WasmImage to cart
+    cart_set_pointer(&wi, sizeof(WasmImage), outPtr);
     free((void*)fileName);
 }
 
@@ -2395,10 +2411,24 @@ void host_LoadTexture(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned in
 }
 
 void host_LoadTextureFromImage(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr) {
-    Image* image = cart_get_pointer(imagePtr, sizeof(Image));
-    Texture2D out = LoadTextureFromImage(*image);
+    // Get WasmImage from cart
+    WasmImage* wi = cart_get_pointer(imagePtr, sizeof(WasmImage));
+    printf("DEBUG: Received WasmImage format=%d\n", wi->format);
+
+    // Convert back to Image
+    Image image = {
+        .data = imageDatas[wi->id],
+        .width = wi->width,
+        .height = wi->height,
+        .mipmaps = wi->mipmaps,
+        .format = wi->format
+    };
+    printf("DEBUG: Reconstructed Image format=%d\n", image.format);
+
+    // Create texture
+    Texture2D out = LoadTextureFromImage(image);
     cart_set_pointer(&out, sizeof(out), outPtr);
-    free((void*)image);
+    free((void*)wi);
 }
 
 void host_LoadTextureCubemap(wasm_exec_env_t exec_env, unsigned int outPtr, unsigned int imagePtr, unsigned int layoutPtr) {
