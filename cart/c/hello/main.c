@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <stdio.h>
 
 Texture2D logo;
 
@@ -7,6 +8,8 @@ int main() {
   Image image = LoadImage("logo.png");
   logo = LoadTextureFromImage(image);
   UnloadImage(image);
+  unsigned char* text = LoadFileText("cyber.txt");
+  printf("cyber:\n%s\n", (char*)text);
   return 0;
 }
 

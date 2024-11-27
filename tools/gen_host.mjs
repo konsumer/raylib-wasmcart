@@ -20,11 +20,26 @@ const fsFunctions = [
   'LoadDirectoryFiles',
   'LoadDirectoryFilesEx',
   'GetFileModTime',
+
+  // fs callbacks are not supported (since we force use of physfs)
+  'SetLoadFileDataCallback',
+  'SetSaveFileDataCallback',
+  'SetLoadFileTextCallback',
+  'SetSaveFileTextCallback',
+
+  // TODO: not sure how to handle, but should be doable
+  `SetTraceLogCallback`
 ]
+
+
 
 // Helper to determine if a type needs pointer handling
 function needsPointerHandling(type) {
   return type.includes('*') || type[0] === type[0].toUpperCase()
+}
+
+function isStringReturn(type) {
+  return type === 'char *' || type === 'const char *'
 }
 
 function generateParamHandling(param) {
@@ -58,6 +73,9 @@ function generateReturnHandling(func, returnVal) {
   if (func.returnType === 'void') {
     return ''
   }
+  if (isStringReturn(func.returnType)) {
+    return `    return cart_set_string(${returnVal});`
+  }
   if (needsPointerHandling(func.returnType)) {
     return `    return cart_set_pointer(&${returnVal}, sizeof(${returnVal}));`
   }
@@ -69,8 +87,9 @@ function isSimpleType(type) {
 }
 
 function generateFunctionSignature(func, isWamr = false) {
-  // Always void when returning structs, as we'll use an output parameter
-  const returnType = func.returnType === 'void' || needsPointerHandling(func.returnType)
+  // Always return unsigned int for string returns or simple types
+  let returnType = func.returnType === 'void' ||
+    (needsPointerHandling(func.returnType) && !isStringReturn(func.returnType))
     ? 'void'
     : 'unsigned int'
 
@@ -80,8 +99,10 @@ function generateFunctionSignature(func, isWamr = false) {
     params.push('wasm_exec_env_t exec_env')
   }
 
-  // Add output parameter for struct returns
-  if (needsPointerHandling(func.returnType) && func.returnType !== 'void') {
+  // Add output parameter for struct returns (but not for strings)
+  if (needsPointerHandling(func.returnType) &&
+      !isStringReturn(func.returnType) &&
+      func.returnType !== 'void') {
     params.push(`unsigned int outPtr`)
   }
 
@@ -113,9 +134,14 @@ function generateFunctionBody(func) {
   } else if (isSimpleType(func.returnType)) {
     // For simple types, return directly
     body += `    return ${fname}(${paramList});\n`
+  } else if (isStringReturn(func.returnType)) {
+    // For string returns
+    body += `    char* result = ${fname}(${paramList});\n`
+    body += `    return cart_set_string(result);\n`
   } else {
     // For struct returns, use output parameter
     body += `    ${func.returnType} out = ${fname}(${paramList});\n`
+    body += `    cart_set_pointer(&out, sizeof(out), outPtr);\n`
   }
 
   // Cleanup
@@ -125,15 +151,6 @@ function generateFunctionBody(func) {
       body += cleanup + '\n'
     }
   })
-
-  // Return handling for complex types
-  if (func.returnType !== 'void') {
-    if (isSimpleType(func.returnType)) {
-      // Already handled above
-    } else {
-      body += `    cart_set_pointer(&out, sizeof(out), outPtr);\n`
-    }
-  }
 
   return body
 }

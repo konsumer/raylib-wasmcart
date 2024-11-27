@@ -5,9 +5,11 @@
 #include <string.h>
 
 unsigned char *RaylibPhysFSLoadFileDataCallback(const char *fileName, int *dataSize) {
+    TraceLog(LOG_INFO, "FS: LOAD Data %s", fileName);
+
     PHYSFS_file *file = PHYSFS_openRead(fileName);
     if (!file) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to open file for reading: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to open file for reading: %s", fileName);
         *dataSize = 0;
         return NULL;
     }
@@ -15,7 +17,7 @@ unsigned char *RaylibPhysFSLoadFileDataCallback(const char *fileName, int *dataS
     // Get file size
     PHYSFS_sint64 fileLength = PHYSFS_fileLength(file);
     if (fileLength < 0) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to get file size: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to get file size: %s", fileName);
         PHYSFS_close(file);
         *dataSize = 0;
         return NULL;
@@ -24,7 +26,7 @@ unsigned char *RaylibPhysFSLoadFileDataCallback(const char *fileName, int *dataS
     // Allocate memory for file data
     unsigned char *data = (unsigned char *)MemAlloc((size_t)fileLength);
     if (!data) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to allocate memory for file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to allocate memory for file: %s", fileName);
         PHYSFS_close(file);
         *dataSize = 0;
         return NULL;
@@ -35,7 +37,7 @@ unsigned char *RaylibPhysFSLoadFileDataCallback(const char *fileName, int *dataS
     PHYSFS_close(file);
 
     if (bytesRead != fileLength) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to read file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to read file: %s", fileName);
         MemFree(data);
         *dataSize = 0;
         return NULL;
@@ -48,7 +50,7 @@ unsigned char *RaylibPhysFSLoadFileDataCallback(const char *fileName, int *dataS
 bool RaylibPhysFSSaveFileDataCallback(const char *fileName, void *data, int dataSize) {
     PHYSFS_file *file = PHYSFS_openWrite(fileName);
     if (!file) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to open file for writing: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to open file for writing: %s", fileName);
         return false;
     }
 
@@ -56,7 +58,7 @@ bool RaylibPhysFSSaveFileDataCallback(const char *fileName, void *data, int data
     PHYSFS_close(file);
 
     if (bytesWritten != dataSize) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to write file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to write file: %s", fileName);
         return false;
     }
 
@@ -65,15 +67,17 @@ bool RaylibPhysFSSaveFileDataCallback(const char *fileName, void *data, int data
 
 char *RaylibPhysFSLoadFileTextCallback(const char *fileName) {
     PHYSFS_file *file = PHYSFS_openRead(fileName);
+    TraceLog(LOG_INFO, "FS: LOAD Text %s", fileName);
+
     if (!file) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to open text file for reading: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to open text file for reading: %s", fileName);
         return NULL;
     }
 
     // Get file size
     PHYSFS_sint64 fileLength = PHYSFS_fileLength(file);
     if (fileLength < 0) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to get text file size: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to get text file size: %s", fileName);
         PHYSFS_close(file);
         return NULL;
     }
@@ -81,7 +85,7 @@ char *RaylibPhysFSLoadFileTextCallback(const char *fileName) {
     // Allocate memory for text (including null terminator)
     char *text = (char *)MemAlloc((size_t)fileLength + 1);
     if (!text) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to allocate memory for text file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to allocate memory for text file: %s", fileName);
         PHYSFS_close(file);
         return NULL;
     }
@@ -91,7 +95,7 @@ char *RaylibPhysFSLoadFileTextCallback(const char *fileName) {
     PHYSFS_close(file);
 
     if (bytesRead != fileLength) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to read text file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to read text file: %s", fileName);
         MemFree(text);
         return NULL;
     }
@@ -104,7 +108,7 @@ char *RaylibPhysFSLoadFileTextCallback(const char *fileName) {
 bool RaylibPhysFSSaveFileTextCallback(const char *fileName, char *text) {
     PHYSFS_file *file = PHYSFS_openWrite(fileName);
     if (!file) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to open text file for writing: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to open text file for writing: %s", fileName);
         return false;
     }
 
@@ -113,7 +117,7 @@ bool RaylibPhysFSSaveFileTextCallback(const char *fileName, char *text) {
     PHYSFS_close(file);
 
     if (bytesWritten != length) {
-        TraceLog(LOG_ERROR, "PHYSFS: Failed to write text file: %s", fileName);
+        TraceLog(LOG_ERROR, "FS: Failed to write text file: %s", fileName);
         return false;
     }
 
