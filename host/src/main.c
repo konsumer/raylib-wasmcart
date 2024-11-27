@@ -36,30 +36,6 @@ void null0_host_update(double timeMs);
 // called on cart unload
 void null0_host_unload();
 
-typedef struct {
-    unsigned int id;       // Image data ID in host
-    int width;
-    int height;
-    int mipmaps;
-    int format;
-} WasmImage;
-
-// Store image data pointers
-cvector_vector_type(void*) imageDatas = NULL;
-
-// Add this to your host cleanup code
-void cleanup_image_data() {
-    if (imageDatas) {
-        for(size_t i = 0; i < cvector_size(imageDatas); i++) {
-            if (imageDatas[i]) {
-                free(imageDatas[i]);
-            }
-        }
-        cvector_free(imageDatas);
-        imageDatas = NULL;
-    }
-}
-
 #ifdef EMSCRIPTEN
 #include "null0_host_emscripten.h"
 #else
@@ -129,7 +105,6 @@ int main(int argc, char *argv[]) {
 
   CloseWindow();
   null0_host_unload();
-  cleanup_image_data();
   CloseFS();
   return 0;
 }
