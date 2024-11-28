@@ -6,20 +6,8 @@ const skippedFunctions = [
   'TraceLog',
   'TextFormat',
 
-  // not sure why, but these are undefined
-  'GetClipboardImage'
-]
-
-// for these, use FS variants (to use physfs)
-const fsFunctions = [
-  'FileExists',
-  'DirectoryExists',
-  'GetFileLength',
-  'ChangeDirectory',
-  'IsPathFile',
-  'LoadDirectoryFiles',
-  'LoadDirectoryFilesEx',
-  'GetFileModTime',
+  // not sure why, but these are undefined, maybe raylib API change
+  'GetClipboardImage',
 
   // fs callbacks are not supported (since we force use of physfs)
   'SetLoadFileDataCallback',
@@ -31,6 +19,18 @@ const fsFunctions = [
   `SetTraceLogCallback`
 ]
 
+// for these, use FS variants (to use physfs)
+const fsFunctions = [
+  'FileExists',
+  'DirectoryExists',
+  'GetFileLength',
+  'ChangeDirectory',
+  'IsPathFile',
+  'LoadDirectoryFiles',
+  'LoadDirectoryFilesEx',
+  'GetFileModTime'
+]
+
 
 
 // Helper to determine if a type needs pointer handling
@@ -40,6 +40,10 @@ function needsPointerHandling(type) {
 
 function isStringReturn(type) {
   return type === 'char *' || type === 'const char *'
+}
+
+function isSimpleType(type) {
+  return ['bool', 'int', 'float', 'double', 'unsigned int', 'long'].includes(type)
 }
 
 function generateParamHandling(param) {
@@ -67,23 +71,6 @@ function generateParamCleanup(param) {
     return `    free((void*)${param.name});`
   }
   return ''
-}
-
-function generateReturnHandling(func, returnVal) {
-  if (func.returnType === 'void') {
-    return ''
-  }
-  if (isStringReturn(func.returnType)) {
-    return `    return cart_set_string(${returnVal});`
-  }
-  if (needsPointerHandling(func.returnType)) {
-    return `    return cart_set_pointer(&${returnVal}, sizeof(${returnVal}));`
-  }
-  return `    return ${returnVal};`
-}
-
-function isSimpleType(type) {
-  return ['bool', 'int', 'float', 'double', 'unsigned int', 'long'].includes(type)
 }
 
 function generateFunctionSignature(func, isWamr = false) {
@@ -198,10 +185,25 @@ function generateWamrSymbols(api) {
 
 
 
-const api = JSON.parse(await readFile('build/_deps/raylib-src/parser/output/raylib_api.json', 'utf8'))
+const api = await fetch('https://raw.githubusercontent.com/RobLoach/raylib-api/refs/tags/v5.5.0/raylib.json').then(r => r.json())
+
+// const { functions } = api
+
+// do a small subset of functions, just to support demo
+const demoFunctions = [
+  'SetWindowSize',
+  'LoadImage',
+  'LoadTextureFromImage',
+  'UnloadImage',
+  'LoadFileText',
+  'ClearBackground',
+  'DrawTexture',
+  'DrawText'
+]
+const functions = api.functions.filter(f => demoFunctions.includes(f.name))
 
 // params is not set sometimes
-for (const f of Object.values(api.functions)) {
+for (const f of Object.values(functions)) {
   if (!f.params) {
     f.params = []
   }
@@ -209,13 +211,13 @@ for (const f of Object.values(api.functions)) {
 
 await writeFile('host/src/null0_host_emscripten.h', [
   (await readFile('tools/gen_host_emscripten_header.h', 'utf8')),
-  generateEmscriptenHeader(api.functions),
+  generateEmscriptenHeader(functions),
   (await readFile('tools/gen_host_emscripten_footer.h', 'utf8'))
 ].join('\n'))
 
 await writeFile('host/src/null0_host_wamr.h', [
   (await readFile('tools/gen_host_wamr_header.h', 'utf8')),
-  generateWamrHeader(api.functions),
-  generateWamrSymbols(api.functions),
+  generateWamrHeader(functions),
+  generateWamrSymbols(functions),
   (await readFile('tools/gen_host_wamr_footer.h', 'utf8'))
 ].join('\n'))

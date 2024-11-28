@@ -1,6 +1,12 @@
 #pragma once
 #include <emscripten.h>
 #include <string.h>
+#include "raylib.h"
+#include "cvector.h"
+
+// these are arrays of complex-structures (that have pointer-fields)
+static cvector_vector_type(Image) bucket_images = NULL;
+
 
 // allocate cart-memory from host C
 EM_JS(unsigned int, cart_malloc, (int size), {

@@ -1,7 +1,6 @@
 #include <raylib.h>
 #include "raylib-physfs.h"
 #include "file_detect.h"
-#include "cvector.h"
 
 // implement these in your host:
 
